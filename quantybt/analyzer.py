@@ -1,17 +1,15 @@
 import pandas as pd
 import vectorbt as vbt
 from typing import Dict, Any, Optional
-from .plots import _PlotBacktest
-from .utils import Utils
-from .stats import Stats
-from .strategy import Strategy
+from quantybt.plots import _PlotBacktest
+from quantybt.utils import Utils
+from quantybt.stats import Stats
+from quantybt.strategy import Strategy
 
 import warnings
 
 class Analyzer:
-    def __init__(
-        self,
-        strategy: Strategy,
+    def __init__(self,strategy: Strategy,
         params: Dict[str, Any],
         full_data: pd.DataFrame,
         timeframe: str,
@@ -22,8 +20,7 @@ class Analyzer:
         slippage: float = 0.000,
         trade_side: Optional[str] = 'longonly',
         tp_stop: Optional[float] = None,
-        sl_stop: Optional[float] = None
-    ):
+        sl_stop: Optional[float] = None):
         self.s = Stats(price_col=price_col)
         self.util = Utils()
         self.strategy = strategy

@@ -13,6 +13,6 @@ __all__ = [
     'Analyzer',
     'AdvancedOptimizer',
     'Loader',
-    'Bootstrapping'
+    'Bootstrapping',
     'LocalSensitivityAnalyzer'
 ]
