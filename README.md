@@ -99,8 +99,10 @@ strategy = YourStrategy()
 
 ## Simple Backtesting
 
-```python
+```markdown
+## Simple Backtesting
 
+```python
 from quantybt import Analyzer
 
 analyzer = Analyzer(
@@ -110,14 +112,13 @@ analyzer = Analyzer(
     timeframe='15m',
     price_col="close",
     init_cash=1000,
-    fees=0.0006, # = 0.06% 
-    slippage=0, 
-    trade_side='longonly', 
-    sl_stop=params['sl_pct'])
+    fees=0.0006,  # = 0.06%
+    slippage=0,
+    trade_side='longonly',
+    sl_stop=params['sl_pct']
+)
 
 print(analyzer.backtest_results())
 
-
-anaylzer.plot_backtest()
+fig = analyzer.plot_backtest()
 fig.write_image("img/backtest_plt.png")
-```
