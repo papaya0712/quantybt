@@ -129,4 +129,4 @@ analyzer.plot_backtest()
 ### quick guide:
 - ** 
 
-![Backtest Plot](img/backtest_plt.png)
+![Backtest Plot](img/mc_plt.png)
