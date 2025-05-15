@@ -1,12 +1,13 @@
 import pandas as pd
 import vectorbt as vbt
 from typing import Dict, Any, Optional
-from quantybt.plots import _PlotBacktest
-from quantybt.utils import Utils
-from quantybt.stats import Stats
-from quantybt.strategy import Strategy
+from .plots import _PlotBacktest
+from .utils import Utils
+from .stats import Stats
+from .strategy import Strategy
 
 import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class Analyzer:
     def __init__(self,strategy: Strategy,
