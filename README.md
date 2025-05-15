@@ -24,8 +24,11 @@
 # **Live integration**
 ---
 
-### Quick guide
-for more detailed explanations, tutorials coming soon
+### Install
+```bash
+git clone https://github.com/papaya0712/quantybt.git
+```
+
 ## 1. Define your strategy
 
 ```python
@@ -92,9 +95,6 @@ strategy = YourStrategy()
 
 ```
 
-### Install
-```bash
-git clone https://github.com/papaya0712/quantybt.git
-```
+
 ---
 
