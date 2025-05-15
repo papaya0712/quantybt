@@ -119,5 +119,5 @@ print(analyzer.backtest_results())
 
 
 anaylzer.plot_backtest()
-![Backtest Plot](img/backtest_plt.png)
+fig.write_image("img/backtest_plt.png")
 ```
