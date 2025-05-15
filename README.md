@@ -99,9 +99,6 @@ strategy = YourStrategy()
 
 ## Simple Backtesting
 
-```markdown
-## Simple Backtesting
-
 ```python
 from quantybt import Analyzer
 
@@ -121,4 +118,5 @@ analyzer = Analyzer(
 print(analyzer.backtest_results())
 
 fig = analyzer.plot_backtest()
-fig.write_image("img/backtest_plt.png")
+```
+fig.write_image("img/backtest_plt.png")  # Save plot as PNG
