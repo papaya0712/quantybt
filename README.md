@@ -124,10 +124,10 @@ analyzer.plot_backtest()
 
 ---
 
-## Montecarlo Simulation
+## Montecarlo Simulation - Bootstrapping
 
 ### Quick Guide:
-- **`analyzer`**: The already defined analyzer instance, as shown above. Alternatively, you can pass a return series.
+- **`analyzer`**: The already defined analyzer instance, as shown above. Alternatively, you can pass a return series and a timeframe.
 - **`n_sims`**: Total number of simulations. Aim for at least 5,000 simulations; 10,000 is recommended.
 - **`batch_size`**: Controls how many simulations run per batch to manage memory usage. With 32 GB of RAM, I typically use a batch size of 500–1,000.
 
