@@ -21,7 +21,7 @@
 
 - **More Custom Models**  
 - **Portfolio Optimization** with advanced methods (HRP, CVaR, Maximum Entropy, ...)  
-# **Live integration**
+- **Live integration**
 ---
 
 ### Install
@@ -29,7 +29,7 @@
 git clone https://github.com/papaya0712/quantybt.git
 ```
 
-## 1. Define your strategy
+## Define ur strategy
 
 ```python
 import pandas as pd
@@ -95,6 +95,29 @@ strategy = YourStrategy()
 
 ```
 
-
 ---
 
+## Simple Backtesting
+
+```python
+
+from quantybt import Analyzer
+
+analyzer = Analyzer(
+    strategy=strat,
+    params=params,
+    full_data=df,
+    timeframe='15m',
+    price_col="close",
+    init_cash=1000,
+    fees=0.0006, # = 0.06% 
+    slippage=0, 
+    trade_side='longonly', 
+    sl_stop=params['sl_pct'])
+
+print(analyzer.backtest_results())
+
+
+anaylzer.plot_backtest()
+![Backtest Plot](backtest_plt.png)
+```

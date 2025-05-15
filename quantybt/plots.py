@@ -4,6 +4,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from typing import TYPE_CHECKING
 
+import warnings
+warnings.filterwarnings("ignore")
 # ============================== Analyzer Plot   ============================== # 
 class _PlotBacktest:
     def __init__(self, analyzer):
