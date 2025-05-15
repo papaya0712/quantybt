@@ -125,3 +125,8 @@ analyzer.plot_backtest()
 ---
 
 ## Montecarlo Simulation
+
+### quick guide:
+- ** 
+
+![Backtest Plot](img/backtest_plt.png)
