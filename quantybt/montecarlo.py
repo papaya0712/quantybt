@@ -2,9 +2,6 @@ import pandas as pd
 import numpy as np
 from .plots import _PlotBootstrapping
 
-
-
-
 try:
     from numba import njit
     print(">>> Successfully imported numba.")
