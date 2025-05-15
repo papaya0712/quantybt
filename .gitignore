@@ -9,6 +9,7 @@ venv/
 .venv/
 env/
 quantybt-env/
+backtesting-env/
 
 # Distribution / packaging
 .Python
