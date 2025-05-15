@@ -119,4 +119,4 @@ print(analyzer.backtest_results())
 
 fig = analyzer.plot_backtest()
 ```
-fig.write_image("img/backtest_plt.png")  # Save plot as PNG
+![Backtest Plot](img/backtest_plt.png)
