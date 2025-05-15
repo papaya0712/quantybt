@@ -118,7 +118,7 @@ analyzer = Analyzer(
 
 print(analyzer.backtest_results())
 
-fig = analyzer.plot_backtest()
+analyzer.plot_backtest()
 ```
 ![Backtest Plot](img/backtest_plt.png)
 
