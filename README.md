@@ -87,11 +87,12 @@ class YourStrategy(Strategy):
             "exit_window": hp.choice("exit_window", [5, 10, 20])
         }
 
+params = {"feature1_window": 100, "feature2_window": 200, ...}
 df = pd.read_feather("path/to/BTC_1d.feather")
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 df = df.set_index('timestamp')
 
-strategy = YourStrategy()
+strat = YourStrategy()
 
 ```
 
@@ -120,3 +121,7 @@ print(analyzer.backtest_results())
 fig = analyzer.plot_backtest()
 ```
 ![Backtest Plot](img/backtest_plt.png)
+
+---
+
+## Montecarlo Simulation
