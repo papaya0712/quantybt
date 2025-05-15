@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -171,114 +171,96 @@ class _PlotWFOSummary:
 # ============================== Montecarlo Bootstrapping Plot ============================== # 
 if TYPE_CHECKING:
     from .montecarlo import Bootstrapping
-import holoviews as hv
 
 class _PlotBootstrapping:
     def __init__(self, mc):
         self.mc = mc
 
-    def _align_series(self, sim_eq: pd.DataFrame, bench_eq: pd.Series):
-        sim_eq.index = pd.to_datetime(sim_eq.index)
-        bench_eq.index = pd.to_datetime(bench_eq.index)
-        start = max(sim_eq.index.min(), bench_eq.index.min())
-        end = min(sim_eq.index.max(), bench_eq.index.max())
-        sim_eq, bench_eq = sim_eq.loc[start:end], bench_eq.loc[start:end]
-        idx = sim_eq.index.union(bench_eq.index)
-        return sim_eq.reindex(idx).ffill(), bench_eq.reindex(idx).ffill()
-
-    def plot_histograms(self, mc_results: pd.DataFrame = None):
-        hv.extension('bokeh')
-        hv.renderer('bokeh').theme = 'carbon'
-
+    def plot_histograms(self, mc_results: Optional[pd.DataFrame] = None):
+        shown_legends = set()
         if mc_results is None:
             data = self.mc.mc_with_replacement()
             mc_results = pd.DataFrame(data['simulated_stats'])
 
-        sharpe_vals = mc_results['Sharpe']
-        sortino_vals = mc_results['Sortino']
-        calmar_vals = mc_results['Calmar']
-        maxdd_vals = mc_results['MaxDrawdown']
+        stats = ['Sharpe', 'Sortino', 'Calmar', 'MaxDrawdown']
+        for stat in stats:
+            mc_results[stat] = mc_results[stat][np.isfinite(mc_results[stat])]
 
-        sharpe_q5, sharpe_q50, sharpe_q95         = np.percentile(sharpe_vals,  [5, 50, 95])
-        sortino_q5, sortino_q50, sortino_q95      = np.percentile(sortino_vals, [5, 50, 95])
-        calmar_q5, calmar_q50, calmar_q95         = np.percentile(calmar_vals,  [5, 50, 95])
-        maxdd_q5, maxdd_q50, maxdd_q95, maxdd_q01 = np.percentile(maxdd_vals,   [5,50,95,1])
+        sharpe_q = np.percentile(mc_results['Sharpe'], [5, 50, 95])
+        sortino_q = np.percentile(mc_results['Sortino'], [5, 50, 95])
+        calmar_q = np.percentile(mc_results['Calmar'], [5, 50, 95])
+        maxdd_q = np.percentile(mc_results['MaxDrawdown'], [1, 5, 50, 95])
 
         bench_ret = self.mc.pf.benchmark_returns()
         bench_stats = self.mc._analyze_series(bench_ret)
 
-        bench_sharpe = bench_stats['Sharpe']
-        bench_sortino = bench_stats['Sortino']
-        bench_calmar = bench_stats['Calmar']
-        bench_maxdd = bench_stats['MaxDrawdown']
+        fig = make_subplots(rows=2, cols=2, subplot_titles=stats)
 
-        color_q5 = "green"
-        color_q50 = "deepskyblue"
-        color_q95 = "red"
-        color_q01 = "yellow"
-        color_bench = "purple"
-        bins = 50
-        plot_width = 600
-        plot_height = 400
+        params = [
+            ('Sharpe', sharpe_q, bench_stats['Sharpe'], 1, 1),
+            ('Sortino', sortino_q, bench_stats['Sortino'], 1, 2),
+            ('Calmar', calmar_q, bench_stats['Calmar'], 2, 1),
+            ('MaxDrawdown', maxdd_q, bench_stats['MaxDrawdown'], 2, 2)
+        ]
 
-        hist_opts = dict(fill_color="lightgrey", bgcolor=None, gridstyle={'grid_line_alpha': 0.3}, width=plot_width, height=plot_height, show_legend=False)
+        for name, qs, bench, row, col in params:
+            values = mc_results[name].dropna()
+            hist_vals, bin_edges = np.histogram(values, bins=40)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            max_y = hist_vals.max()
 
-        sharpe_vals = sharpe_vals[np.isfinite(sharpe_vals)]
-        sortino_vals = sortino_vals[np.isfinite(sortino_vals)]
-        calmar_vals = calmar_vals[np.isfinite(calmar_vals)]
-        maxdd_vals = maxdd_vals[np.isfinite(maxdd_vals)]
+            hist_trace = go.Bar(
+                x=bin_centers,
+                y=hist_vals,
+                name=f"{name} Distribution",
+                marker_color='grey',
+                showlegend=False
+            )
+            fig.add_trace(hist_trace, row=row, col=col)
 
-        sharpe_hist_values, sharpe_bin_edges = np.histogram(sharpe_vals, bins=bins)
-        sortino_hist_values, sortino_bin_edges = np.histogram(sortino_vals, bins=bins)
-        calmar_hist_values, calmar_bin_edges = np.histogram(calmar_vals, bins=bins)
-        maxdd_hist_values, maxdd_bin_edges = np.histogram(maxdd_vals, bins=bins)
+            if name != 'MaxDrawdown':
+                labels = ['5%', '50%', '95%']
+                colors = ['green', 'deepskyblue', 'red']
+               
+                dashes = [None, None, None]  
+            else:
+                labels = ['1%', '5%', '50%', '95%']
+                colors = ['yellow', 'green', 'deepskyblue', 'red']
+                dashes = [None, None, None, None]
 
+            for i, val in enumerate(qs):
+                legend_label = f"{labels[i]} Quantile"
+                showlegend_flag = legend_label not in shown_legends
+                if showlegend_flag:
+                    shown_legends.add(legend_label)
+                q_trace = go.Scatter(
+                    x=[val, val], y=[0, max_y], mode='lines',   name=legend_label,  marker=dict(color=colors[i]),  showlegend=showlegend_flag )
+                fig.add_trace(q_trace, row=row, col=col)
 
-        hist_sharpe = hv.Histogram((sharpe_hist_values, sharpe_bin_edges)).opts(title="Sharpe Distribution", xlabel="Sharpe", ylabel="Frequency", **hist_opts)
-        hist_sortino = hv.Histogram((sortino_hist_values, sortino_bin_edges)).opts(title="Sortino Distribution", xlabel="Sortino", ylabel="Frequency", **hist_opts)
-        hist_calmar = hv.Histogram((calmar_hist_values, calmar_bin_edges)).opts(title="Calmar Distribution", xlabel="Calmar", ylabel="Frequency", **hist_opts)
-        hist_maxdd = hv.Histogram((maxdd_hist_values, maxdd_bin_edges)).opts(title="Max Drawdown Distribution", xlabel="MaxDrawdown", ylabel="Frequency", **hist_opts)
+            
+            bench_trace = go.Scatter(
+                x=[bench, bench],
+                y=[0, max_y],
+                mode='lines',
 
-        max_y_sharpe = sharpe_hist_values.max()
-        max_y_sortino = sortino_hist_values.max()
-        max_y_calmar = calmar_hist_values.max()
-        max_y_maxdd = maxdd_hist_values.max()
+                name=f"{name} Benchmark",
+                marker=dict(color='purple'),  
+                showlegend=(row == 1 and col == 1)
+            )
+            fig.add_trace(bench_trace, row=row, col=col)
 
-        spikes_sharpe = (
-            hv.Spikes(pd.DataFrame({'Sharpe': [sharpe_q5], 'y': [max_y_sharpe]}), kdims='Sharpe', vdims='y', label='5th %ile').opts(color=color_q5, line_dash="dashed", line_width=2) *
-            hv.Spikes(pd.DataFrame({'Sharpe': [sharpe_q50], 'y': [max_y_sharpe]}), kdims='Sharpe', vdims='y', label='50th %ile').opts(color=color_q50, line_dash="solid", line_width=2) *
-            hv.Spikes(pd.DataFrame({'Sharpe': [sharpe_q95], 'y': [max_y_sharpe]}), kdims='Sharpe', vdims='y', label='95th %ile').opts(color=color_q95, line_dash="dashed", line_width=2))
+      
+        fig.update_layout(
+            height=800,
+            template="plotly_dark",
+            width=1000,
+            title_text="Bootstrapped Metric Distributions",
+            legend=dict(orientation='h', yanchor='bottom', y=-0.1)
+        )
 
-        spikes_sortino = (
-            hv.Spikes(pd.DataFrame({'Sortino': [sortino_q5], 'y': [max_y_sortino]}), kdims='Sortino', vdims='y', label='5th %ile').opts(color=color_q5, line_dash="dashed", line_width=2) *
-            hv.Spikes(pd.DataFrame({'Sortino': [sortino_q50], 'y': [max_y_sortino]}), kdims='Sortino', vdims='y', label='50th %ile').opts(color=color_q50, line_dash="solid", line_width=2) *
-            hv.Spikes(pd.DataFrame({'Sortino': [sortino_q95], 'y': [max_y_sortino]}), kdims='Sortino', vdims='y', label='95th %ile').opts(color=color_q95, line_dash="dashed", line_width=2))
-
-        spikes_calmar = (
-            hv.Spikes(pd.DataFrame({'Calmar': [calmar_q5], 'y': [max_y_calmar]}), kdims='Calmar', vdims='y', label='5th %ile').opts(color=color_q5, line_dash="dashed", line_width=2) *
-            hv.Spikes(pd.DataFrame({'Calmar': [calmar_q50], 'y': [max_y_calmar]}), kdims='Calmar', vdims='y', label='50th %ile').opts(color=color_q50, line_dash="solid", line_width=2) *
-            hv.Spikes(pd.DataFrame({'Calmar': [calmar_q95], 'y': [max_y_calmar]}), kdims='Calmar', vdims='y', label='95th %ile').opts(color=color_q95, line_dash="dashed", line_width=2))
-
-        spikes_maxdd = (
-            hv.Spikes(pd.DataFrame({'MaxDrawdown': [maxdd_q01], 'y': [max_y_maxdd]}), kdims='MaxDrawdown', vdims='y', label='1th %ile').opts(color=color_q01, line_dash="solid", line_width=2) *
-            hv.Spikes(pd.DataFrame({'MaxDrawdown': [maxdd_q5], 'y': [max_y_maxdd]}), kdims='MaxDrawdown', vdims='y', label='5th %ile').opts(color=color_q5, line_dash="dashed", line_width=2) *
-            hv.Spikes(pd.DataFrame({'MaxDrawdown': [maxdd_q50], 'y': [max_y_maxdd]}), kdims='MaxDrawdown', vdims='y', label='50th %ile').opts(color=color_q50, line_dash="solid", line_width=2) *
-            hv.Spikes(pd.DataFrame({'MaxDrawdown': [maxdd_q95], 'y': [max_y_maxdd]}), kdims='MaxDrawdown', vdims='y', label='95th %ile').opts(color=color_q95, line_dash="dashed", line_width=2))
-
-        bench_sh_spike = hv.Spikes(pd.DataFrame({'Sharpe': [bench_sharpe], 'y': [max_y_sharpe]}), kdims='Sharpe', vdims='y', label='Benchmark').opts(color=color_bench, line_dash="solid", line_width=2)
-        bench_so_spike = hv.Spikes(pd.DataFrame({'Sortino': [bench_sortino], 'y': [max_y_sortino]}), kdims='Sortino', vdims='y', label='Benchmark').opts(color=color_bench, line_dash="solid", line_width=2)
-        bench_ca_spike = hv.Spikes(pd.DataFrame({'Calmar': [bench_calmar], 'y': [max_y_calmar]}), kdims='Calmar', vdims='y', label='Benchmark').opts(color=color_bench, line_dash="solid", line_width=2)
-        bench_dd_spike = hv.Spikes(pd.DataFrame({'MaxDrawdown': [bench_maxdd], 'y': [max_y_maxdd]}), kdims='MaxDrawdown', vdims='y', label='Benchmark').opts(color=color_bench, line_dash="solid", line_width=2)
-
-        plot_sharpe = (hist_sharpe * spikes_sharpe * bench_sh_spike).opts(show_legend=True, legend_position='top_right')
-        plot_sortino = (hist_sortino * spikes_sortino * bench_so_spike).opts(show_legend=True, legend_position='top_right')
-        plot_calmar = (hist_calmar * spikes_calmar * bench_ca_spike).opts(show_legend=True, legend_position='top_right')
-        plot_maxdd = (hist_maxdd * spikes_maxdd * bench_dd_spike).opts(show_legend=True, legend_position='top_right')
-
-        final_plot = (plot_sharpe + plot_sortino + plot_calmar + plot_maxdd).opts(shared_axes=False)
-        return final_plot
-    
+        return fig   
 # ============================== Heatmap - local sensitivity analysis ============================== # 
+import holoviews as hv
 class _lsa:
     def __init__(self, matrix: pd.DataFrame, title: str = "Parameter Sensitivities"):
         self.df = matrix
