@@ -92,5 +92,9 @@ strategy = YourStrategy()
 
 ```
 
+### Install
+```bash
+git clone https://github.com/papaya0712/quantybt.git
+```
 ---
 
