@@ -5,9 +5,9 @@ import vectorbt as vbt
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, List, Union, Sequence
 from hyperopt import space_eval, STATUS_OK, tpe, fmin, Trials
-from quantybt.plots import _PlotWFOSummary
-from quantybt.analyzer import Analyzer
-from quantybt.stats import Stats
+from .plots import _PlotWFOSummary
+from .analyzer import Analyzer
+from .stats import Stats
 import logging
 
 
@@ -92,12 +92,7 @@ class AdvancedOptimizer:
             "profit_factor": lambda pf: pf.stats().get("Profit Factor", np.nan),
         }
 
-    def _generate_splits(
-        self, df: pd.DataFrame, cfg: _WFOSplitCfg
-    ) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
-        """
-        Generate Walk-Forward splits based on the given configuration.
-        """
+    def _generate_splits(self, df: pd.DataFrame, cfg: _WFOSplitCfg) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
         total_samples = len(df)
         test_samples = int(cfg.test_size * total_samples)
         logging.debug(
@@ -112,14 +107,14 @@ class AdvancedOptimizer:
             min_required = train_samples + cfg.n_folds * test_samples
             if min_required > total_samples:
                 raise ValueError(
-                    f"Nicht genug Daten: benötigt {min_required}, vorhanden {total_samples}"
+                    f"not enough data: required  {min_required}, available {total_samples}"
                 )
 
             splits: List[Tuple[pd.DataFrame, pd.DataFrame]] = []
             start = 0
             for fold in range(cfg.n_folds):
                 if start + train_samples + test_samples > total_samples:
-                    logging.debug(f"Rolling: Exiting at fold {fold} to avoid overflow.")
+                    logging.debug(f"Rolling: Exiting at fold {fold} to avoid overflow")
                     break
                 train_df = df.iloc[start : start + train_samples]
                 test_df = df.iloc[
@@ -136,7 +131,7 @@ class AdvancedOptimizer:
         # Anchored mode (growing training window)
         min_train_samples = int(0.2 * total_samples)
         if min_train_samples + cfg.n_folds * test_samples > total_samples:
-            raise ValueError(f"Nicht genug Daten für {cfg.n_folds} Folds")
+            raise ValueError(f"not enough data for {cfg.n_folds} Folds")
 
         splits = []
         current_start = min_train_samples
@@ -181,9 +176,6 @@ class AdvancedOptimizer:
         print("-" * 40)
 
     def _prepare_splits(self) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
-        """
-        Prepare all splits for each configured split_cfg.
-        """
         df = self.analyzer.train_df.sort_index()
         all_splits: List[Tuple[pd.DataFrame, pd.DataFrame]] = []
         for cfg in self.split_cfgs:
@@ -370,5 +362,7 @@ class AdvancedOptimizer:
      }
     
     def plot_walkforward_summary(self, title: str = "Walk-Forward Summary"):
+     """x axis format not correct yet"""
      return _PlotWFOSummary(self).plot(title=title)
     
+#

@@ -78,7 +78,7 @@ class Loader:
 
     def download_data_for_symbols(self) -> None:
         """
-        Download data for all symbols and save each as a Feather file in the save_directory.
+        Download data for all symbols and save each as a Feather file in your save_directory
         """
         for symbol in self.symbols:
             print(f"Loading data for {symbol}...")
