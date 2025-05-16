@@ -50,18 +50,20 @@ Using Monte Carlo methods gives you a better understanding of real risks in your
   <tr>
     <td><strong>WLLN</strong></td>
     <td>
-      $$
-      \lim_{N \to \infty} \Pr\left(|\bar X_N - \mathbb{E}[X]| > \varepsilon\right) = 0,\quad
-      \text{where} \quad \bar X_N = \frac{1}{N}\sum_{i=1}^N X_i,\; \varepsilon > 0
+      $$ 
+      \lim_{N \to \infty} \Pr\left(|\bar X_N - \mathbb{E}[X]| > \varepsilon\right) = 0,\quad 
+      \text{where} \quad 
+      \bar X_N = \frac{1}{N} \sum_{i=1}^N X_i,\; \varepsilon > 0 
       $$
     </td>
   </tr>
   <tr>
     <td><strong>CLT</strong></td>
     <td>
-      $$
-      \frac{\bar X_N - \mathbb{E}[X]}{\sigma / \sqrt{N}} \xrightarrow{d} \mathcal{N}(0,1),\quad
-      \text{with} \quad \sigma^2 = \mathrm{Var}(X)
+      $$ 
+      \frac{\bar X_N - \mathbb{E}[X]}{\sigma / \sqrt{N}} \xrightarrow{d} \mathcal{N}(0,1),\quad 
+      \text{with} \quad 
+      \sigma^2 = \mathrm{Var}(X) 
       $$
     </td>
   </tr>
