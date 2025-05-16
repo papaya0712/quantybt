@@ -1,10 +1,11 @@
-# 📘 some nice and interesting background theory about stuff in this framework
+# some nice and interesting background theory about stuff in this framework
 
 This document outlines the theoretical foundations used in the QuantyBT framework, including metric definitions statistical methods and algorithms
 
 ---
 
-## Sharpe Ratio
+# Basics
+### Sharpe Ratio
 
 We define:
 
@@ -14,13 +15,27 @@ $$
 
 Where:
 
-- \( \mathbb{E}[r] \): expected return  
-- \( \sigma[r] \): standard deviation  
-- \( T \): annualization factor (e.g. 365 for daily crypto)
+- $$\( \mathbb{E}[r] \)§§: expected return  
+- §§\( \sigma[r] \)§§: standard deviation  
+- §§\( T \)§§: annualization factor (im using 365days as base for crypot currencies)
 
 ---
 
-## Monte Carlo Simulation and P-Value Estimation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Monte Carlo Simulation and P-Value Estimation
 
 P-values for simulation significance testing are computed as:
 
