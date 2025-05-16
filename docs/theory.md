@@ -66,26 +66,39 @@ Although the strict i.i.d. assumptions are violated, empirical evidence often sh
 
 ### P-Value
 
-To quantify how clearly our strategy outperforms the benchmark, we apply a **randomisation/bootstrap test** that makes **no distributional assumptions** about the performance metric (e.g., Sharpe, Sortino, Calmar).
+To assess whether our strategy truly outperforms a benchmark, we apply a **non-parametric bootstrap/randomisation test** that avoids strong distributional assumptions about the performance metric (e.g., Sharpe, Sortino, Calmar).
 
-**Procedure**
+This method relies on the same foundational ideas as in the Monte Carlo simulation:
+
+1. **Weak Law of Large Numbers (WLLN):** With a sufficiently large number of resamples, the bootstrap distribution stabilises around its expected value.
+2. **Central Limit Theorem (CLT) heuristic:** The empirical distribution of the test statistic often becomes approximately normal, enabling the use of confidence intervals and p-values—even under weak assumptions.
+
+Although standard bootstrap methods assume i.i.d. samples, we use **block bootstrap** to preserve temporal dependence such as autocorrelation and volatility clustering.
+
+**Test Procedure**
 
 Under the null hypothesis  
-\( H_0 \) (*no outperformance*), we generate \( N \) synthetic performance values \( T_i \) via **block bootstrap** of the excess return series (alternatively: permutation or sign-flip can be used).
+\( H_0 \): *The strategy does not outperform the benchmark*,  
+we generate \( N \) synthetic test statistics \( T_i \) by resampling the **excess return series** (block bootstrap, permutation, or sign-flip methods).
 
-The **two-sided p-value** is computed as:
+The two-sided p-value is calculated as:
 
-\[
+$$
 p = \frac{2 \cdot \min \left( \#\{T_i \leq T_{\text{orig}}\},\; \#\{T_i \geq T_{\text{orig}}\} \right) + 1}{N + 1}
-\]
+$$
 
-For a one-sided test (pure outperformance or underperformance), the factor 2 is omitted.
+For a one-sided test, omit the factor 2.
 
 **Interpretation**
 
-The p-value \( p \) expresses the probability, under \( H_0 \), of observing a test statistic as extreme as \( T_{\text{orig}} \) purely by chance.
+The p-value \( p \) represents the probability of observing a test statistic as extreme as \( T_{\text{orig}} \) under \( H_0 \), i.e., assuming no true outperformance.
 
-This method is robust to **non-normality**, **skewness**, and **heteroscedasticity**. However, if strong **serial correlation** is present in the data, a **block bootstrap** should be used to avoid variance distortion.
+This approach is robust to:
+- **Non-normality**
+- **Skewed distributions**
+- **Heteroscedasticity**
+
+However, if strong **serial dependence** is present, a **block bootstrap** is essential to maintain valid inference.
 
 **Hypotheses**
 
