@@ -17,9 +17,6 @@ Where:
 - $T$: annualization factor (using 365 days as base for crypto)
 - $r_f$: risk-free return rate which usually derived from treasury bills. for crypto its typically 0 
 
-- 
----
-
 ### Sortino Ratio
 
 $$
