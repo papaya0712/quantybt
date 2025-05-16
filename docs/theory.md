@@ -15,25 +15,11 @@ $$
 
 Where:
 
-- $$\( \mathbb{E}[r] \)§§: expected return  
-- §§\( \sigma[r] \)§§: standard deviation  
-- §§\( T \)§§: annualization factor (im using 365days as base for crypot currencies)
+- $\mathbb{E}[r]$: expected return  
+- $\sigma[r]$: standard deviation  
+- $T$: annualization factor (using 365 days as base for crypto)
 
 ---
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ### Monte Carlo Simulation and P-Value Estimation
 
