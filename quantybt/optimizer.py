@@ -312,45 +312,58 @@ class AdvancedOptimizer:
     def evaluate(self) -> dict:
      if self.best_params is None:
         raise ValueError("Call optimize() before evaluate().")
-
+     
      df_is = self.strategy.preprocess_data(self.analyzer.train_df.copy(), self.best_params)
      sig_is = self.strategy.generate_signals(df_is, **self.best_params)
+     dir_is = self._choose_direction(sig_is)
+
      self.train_pf = vbt.Portfolio.from_signals(
-        close=df_is[self.s.price_col],
-        entries=sig_is.get('entries'), exits=sig_is.get('exits'),
-        short_entries=sig_is.get('short_entries'), short_exits=sig_is.get('short_exits'),
-        freq=self.timeframe, init_cash=self.init_cash,
-        fees=self.fees, slippage=self.slippage,
-        direction='longonly',
+         close=df_is[self.s.price_col],
+        entries=sig_is.get('entries'),
+        exits=sig_is.get('exits'),
+        short_entries=sig_is.get('short_entries'),
+        short_exits=sig_is.get('short_exits'),
+        freq=self.timeframe,
+        init_cash=self.init_cash,
+        fees=self.fees,
+        slippage=self.slippage,
+        direction=dir_is,
         sl_stop=self.best_params.get('sl_pct'),
         tp_stop=self.best_params.get('tp_pct')
-     )
+    )
 
-     # Final Out-of-Sample Portfolios per Fold
+     # oos
      self.oos_pfs = []
      for train_df, val_df in self._splits:
-        # Preprocess & generate signals for this fold
         df_val = self.strategy.preprocess_data(val_df.copy(), self.best_params)
         sig_val = self.strategy.generate_signals(df_val, **self.best_params)
-        # Build portfolio
+        dir_val = self._choose_direction(sig_val)
+
         pf_val = vbt.Portfolio.from_signals(
             close=df_val[self.s.price_col],
-            entries=sig_val.get('entries'), exits=sig_val.get('exits'),
-            short_entries=sig_val.get('short_entries'), short_exits=sig_val.get('short_exits'),
-            freq=self.timeframe, init_cash=self.init_cash,
-            fees=self.fees, slippage=self.slippage,
-            direction='longonly',
+            entries=sig_val.get('entries'),
+            exits=sig_val.get('exits'),
+            short_entries=sig_val.get('short_entries'),
+            short_exits=sig_val.get('short_exits'),
+            freq=self.timeframe,
+            init_cash=self.init_cash,
+            fees=self.fees,
+            slippage=self.slippage,
+            direction=dir_val,
             sl_stop=self.best_params.get('sl_pct'),
             tp_stop=self.best_params.get('tp_pct')
         )
         self.oos_pfs.append(pf_val)
 
-     
      self.test_pf = self.oos_pfs[-1] if self.oos_pfs else None
 
-     # Summaries
+
      train_summary = self.s.backtest_summary(self.train_pf, self.timeframe)
-     test_summary  = self.s.backtest_summary(self.test_pf, self.timeframe) if self.test_pf is not None else None
+     test_summary  = (
+        self.s.backtest_summary(self.test_pf, self.timeframe)
+        if self.test_pf is not None
+        else None
+     )
 
      return {
         'train_pf':       self.train_pf,
@@ -360,7 +373,7 @@ class AdvancedOptimizer:
         'oos_pfs':        self.oos_pfs,
         'trial_metrics':  self.trial_metrics
      }
-    
+
     def plot_walkforward_summary(self, title: str = "Walk-Forward Summary"):
      """x axis format not correct yet"""
      return _PlotWFOSummary(self).plot(title=title)

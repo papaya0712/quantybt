@@ -32,8 +32,16 @@ class Bootstrapping:
     Incoming: stationary Bootstrapping
     """
     _PERIODS = {
-        '1m': 525_600, '5m': 105_120, '15m': 35_040, '30m': 17_520,
-        '1h': 8_760, '2h': 4_380, '4h': 2_190, '1d': 365, '1w': 52
+        '1m': 525_600, 
+        '5m': 105_120, 
+        '15m': 35_040, 
+        '30m': 17_520,
+        '1h': 8_760, 
+        '2h': 4_380, 
+        '4h': 2_190, 
+        '1d': 365, 
+        '1w': 52
+        
     }
 
     def __init__(self, analyzer=None, *, timeframe='1d', ret_series=None, n_sims=1000, random_seed=69, batch_size=500):
@@ -58,7 +66,7 @@ class Bootstrapping:
         self.ann_factor = self._PERIODS[self.timeframe]
         self.batch_size = batch_size
 
-    def _convert_frequency(self, ret: pd.Series) -> pd.Series:
+    def _frequency(self, ret: pd.Series) -> pd.Series:
         rs = ret.copy()
         rs.index = pd.to_datetime(rs.index)
         if self.timeframe.endswith(('m', 'h')) or self.timeframe == '1d':
@@ -111,7 +119,7 @@ class Bootstrapping:
 
     def mc_with_replacement(self):
         np.random.seed(self.random_seed)
-        returns = self._convert_frequency(self.ret_series)
+        returns = self._frequency(self.ret_series)
         arr = returns.values.astype(np.float32)
         n_obs = arr.size
 
@@ -145,7 +153,7 @@ class Bootstrapping:
         if self.pf is not None and hasattr(self.pf, 'benchmark_value'):
             bench = self.pf.benchmark_value()
         else:
-            orig_ret = self._convert_frequency(self.ret_series)
+            orig_ret = self._frequency(self.ret_series)
             bench = (1 + orig_ret).cumprod() * self.init_cash
         bench.index = pd.to_datetime(bench.index)
         return bench
@@ -172,7 +180,7 @@ class Bootstrapping:
             print(f"{metric:>18}: p-value = {p_val:.5f} | original = {orig_value:.4f} | sim_mean = {sim_values.mean():.4f}")
 
         if self.pf is not None and hasattr(self.pf, 'benchmark_returns'):
-            bench_ret = self._convert_frequency(self.pf.benchmark_returns())
+            bench_ret = self._frequency(self.pf.benchmark_returns())
             bench_stats = self._analyze_series(bench_ret)
 
             print("\n=== Empirical P-Value Tests (Simulated vs Benchmark) ===")
