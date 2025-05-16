@@ -122,7 +122,7 @@ analyzer.plot_backtest()
 ```
 
 ```text
-Value
+
 CAGR [%]                                                 79.03
 Benchmark CAGR [%]                                       56.95
 Strategy Performance [%]                               2497.84
@@ -164,15 +164,12 @@ mc = Bootstrapping(analyzer=analyzer, n_sims=10000, batch_size=500)
 ```
 
 ```text
-
 === Empirical P-Value Tests (Simulated vs Benchmark) ===
   
             Sharpe: p-value = 0.03960 | benchmark = 1.0074 | sim_mean = 1.8808
            Sortino: p-value = 0.04080 | benchmark = 1.4347 | sim_mean = 2.7117
             Calmar: p-value = 0.03820 | benchmark = 0.7370 | sim_mean = 2.6505
-       MaxDrawdown: p-value = 0.00040 | benchmark = -0.7727 | sim_mean = -0.3299
-
-
+       MaxDrawdown: p-value = 0.00040 | benchmark = -0.7727 | sim_mean = -0.3299       
 ```
 
 ![Backtest Plot](img/mc_plt.png)
