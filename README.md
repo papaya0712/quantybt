@@ -24,7 +24,7 @@
 - **Live integration**
 ---
 
-### Install
+## Install
 ```bash
 git clone https://github.com/papaya0712/quantybt.git
 ```
@@ -122,7 +122,6 @@ analyzer.plot_backtest()
 ```
 
 ```text
-
 CAGR [%]                                                 79.03
 Benchmark CAGR [%]                                       56.95
 Strategy Performance [%]                               2497.84
@@ -160,6 +159,15 @@ Avg Losing Trade Duration            1 days 08:28:53.497536945
 from quantybt import Bootstrapping
 
 mc = Bootstrapping(analyzer=analyzer, n_sims=10000, batch_size=500)
+
+mc_results = mc.results()
+print(mc_results)
+
+```
+
+```python
+fig = mc.plot_histograms(mc_results)
+fig.show()
 
 ```
 
