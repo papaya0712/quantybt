@@ -164,13 +164,6 @@ mc_results = mc.results()
 print(mc_results)
 
 ```
-
-```python
-fig = mc.plot_histograms(mc_results)
-fig.show()
-
-```
-
 ```text
 === Empirical P-Value Tests (Simulated vs Benchmark) ===
   
@@ -180,4 +173,9 @@ fig.show()
        MaxDrawdown: p-value = 0.00040 | benchmark = -0.772 | sim_mean = -0.3299       
 ```
 
+```python
+fig = mc.plot_histograms(mc_results)
+fig.show()
+
+```
 ![Backtest Plot](img/mc_plt.png)
