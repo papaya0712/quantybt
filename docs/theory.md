@@ -20,7 +20,7 @@ Where:
 ### Sortino Ratio
 
 $$
-\text{Sortino} = \frac{\mathbb{E}[r] - r_f}{\sigma_{\text{down}}}
+\text{Sortino} = \frac{\mathbb{E}[r] - r_f}{\sigma_{\text{down}}} \cdot \sqrt{T}
 $$
 
 Where:
