@@ -68,7 +68,7 @@ Although the strict i.i.d. assumptions are violated, empirical evidence often sh
 
 # Walkfoward Optimization and Generalization loss penalty 
 ### Why ?
-Only using a train-test split where you optimize your hyperparameter space on in sample data (train fold) and test them on unseen data (test fold) is better than nothin but still can lead to overfitting your system. 
-A more robust method is the Walkforward optimization where u use a rolling (or anchored) train/test window which results in more smaller train test splits over ur whole data. 
 
-![Walkforward Optimization](wfo_theory_img.png)
+Relying on a single train-test split—where you optimize your hyperparameters on in-sample data (train fold) and evaluate on out-of-sample data (test fold)—is better than nothing, but still prone to overfitting.
+
+A more robust approach is **Walkforward Optimization**, where you use a rolling (or anchored) train/test window. This generates multiple smaller train-test splits across the entire dataset, providing a more reliable estimate of generalization performance and robustness.
