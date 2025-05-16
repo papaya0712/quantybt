@@ -56,10 +56,11 @@ $$
 \frac{\bar X_N - \mathbb{E}[X]}{\sigma / \sqrt{N}} \xrightarrow{d} \mathcal{N}(0,1),\quad \text{with} \quad \sigma^2 = \mathrm{Var}(X)
 $$
 
-In this Monte Carlo framework, we apply simple bootstrap resampling with replacement to generate thousands of synthetic equity curves. While this breaks temporal dependencies such as autocorrelation and volatility clustering, it provides a first-order approximation of the sampling distribution of key performance metrics (Sharpe, Sortino, Calmar).
+In our framework, we apply simple bootstrap resampling with replacement to generate thousands of synthetic equity curves. While this breaks temporal dependencies such as autocorrelation and volatility clustering, it provides a first-order approximation of the sampling distribution of key performance metrics (Sharpe, Sortino, Calmar, ...).
 
 The statistical rationale rests on two things:
-1. Weak Law of Large Numbers: With enough resamples, the bootstrapped estimates stabilise around their expected values.
-2. Asymptotic normality (heuristically linked to the CLT): The empirical distributions tend to become approximately normal, allowing us to derive confidence intervals and p-values.
+1. Weak Law of Large Numbers: With enough resamples, the bootstrapped estimates stabilise around their expected values
+2. Asymptotic normality (heuristically linked to the CLT): The empirical distributions tend to become approximately normal allowing us to derive confidence intervals and p-values
 
 Although the strict i.i.d. assumptions are violated, empirical evidence often shows sufficiently normal-shaped distributions. If strong serial dependence is suspected, a block or stationary bootstrap is preferable.
+
