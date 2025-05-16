@@ -17,13 +17,20 @@ Where:
 - $T$: annualization factor (using 365 days as base for crypto)
 - $r_f$: risk-free return rate which usually derived from treasury bills. for crypto its typically 0 
 
+- 
 ---
 
 ### Sortino Ratio
+
 $$
-\rext{Sortino} = \
+\text{Sortino} = \frac{\mathbb{E}[r] - r_f}{\sigma_{\text{down}}}
 $$
 
+Where:
+
+- $\sigma_{\text{down}}$: downside standard deviation (only measures negative return deviations)
+
+Unlike the Sharpe Ratio, the Sortino Ratio **only penalizes downside volatility**, which is a more realistic risk measure, especially for strategies with asymmetric return distributions.
 
 ### Calmar Ratio
 
