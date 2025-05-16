@@ -120,6 +120,31 @@ print(analyzer.backtest_results())
 
 analyzer.plot_backtest()
 ```
+
+```text
+Value
+CAGR [%]                                                 79.03
+Benchmark CAGR [%]                                       56.95
+Strategy Performance [%]                               2497.84
+Benchmark Performance [%]                              1144.35
+Strategy Max Drawdown [%]                               -20.01
+Benchmark Max Drawdown [%]                              -77.27
+Annualized Strategy Volatility [%]                        34.1
+Annualized Benchmark Volatility [%]                      66.97
+Sharpe Ratio                                              1.88
+Sortino Ratio                                              2.7
+Calmar Ratio                                              3.95
+Profit Factor                                             1.99
+Correlation to Benchmark                                  0.51
+Total Trades                                               328
+Win Rate [%]                                             37.92
+Best Trade [%]                                           31.94
+Worst Trade [%]                                          -5.82
+Avg Winning Trade [%]                                     5.38
+Avg Losing Trade [%]                                     -1.47
+Avg Winning Trade Duration           3 days 12:48:30.483870967
+Avg Losing Trade Duration            1 days 08:28:53.497536945
+```
 ![Backtest Plot](img/backtest_plt.png)
 
 ---
@@ -140,12 +165,12 @@ mc = Bootstrapping(analyzer=analyzer, n_sims=10000, batch_size=500)
 
 ```text
 
-                 === Empirical P-Value Tests (Simulated vs Benchmark) ===
-
-            Sharpe: p-value = 0.02597 | benchmark = 1.0074 | sim_mean = 1.8779
-           Sortino: p-value = 0.02597 | benchmark = 1.4347 | sim_mean = 2.7074
-            Calmar: p-value = 0.03596 | benchmark = 0.7370 | sim_mean = 2.6538
-       MaxDrawdown: p-value = 0.00200 | benchmark = -0.7727 | sim_mean = -0.3288
+=== Empirical P-Value Tests (Simulated vs Benchmark) ===
+  
+            Sharpe: p-value = 0.03960 | benchmark = 1.0074 | sim_mean = 1.8808
+           Sortino: p-value = 0.04080 | benchmark = 1.4347 | sim_mean = 2.7117
+            Calmar: p-value = 0.03820 | benchmark = 0.7370 | sim_mean = 2.6505
+       MaxDrawdown: p-value = 0.00040 | benchmark = -0.7727 | sim_mean = -0.3299
 
 
 ```
