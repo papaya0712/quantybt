@@ -22,7 +22,7 @@
 - **More Metrics** for more confidence (VaR, CVaR, ...) 
 - **More Custom Models**  
 - **Portfolio Optimization** with advanced methods (HRP, Maximum Entropy, ...)  
-- **Live integration**
+- **vbt "from_orders" logic** maybe will be added for better limit order and position sizing simulations
 ---
 
 ## Install
@@ -156,7 +156,7 @@ Avg Losing Trade Duration            1 days 08:28:53.497536945
 - **`n_sims`**: Total number of simulations. Aim for at least 5,000 simulations; 10,000 is recommended.
 - **`batch_size`**: Controls how many simulations run per batch to manage memory usage. With 32 GB of RAM, I typically use a batch size of 500–1,000.
 
-Note: Standard bootstrapping methods destroy the autocorrelation structure of return series
+Note: standard bootstrapping methods destroy the autocorrelation structure of ur return series
 
 ```python
 from quantybt import Bootstrapping
