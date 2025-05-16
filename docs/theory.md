@@ -46,13 +46,15 @@ Where:
 #### Why?
 Using Monte Carlo methods gives you a better understanding of real risks in your trading system. In general we rely here on the **Weak Law of Large Numbers (WLLN)** and the **Central Limit Theorem (CLT)** from probability theory:
 
-**WLLN**  
+**WLLN**
+$$  
 \[
 \lim_{N \to \infty}
 \Pr\Bigl(\,\bigl|\bar X_N - \mathbb{E}[X]\bigr| > \varepsilon\Bigr)
 \;=\;0,
 \]
 where \(\bar X_N = \frac{1}{N}\sum_{i=1}^N X_i\) and \(\varepsilon > 0\).
+
 
 **CLT**  
 \[
@@ -61,3 +63,4 @@ where \(\bar X_N = \frac{1}{N}\sum_{i=1}^N X_i\) and \(\varepsilon > 0\).
 \mathcal{N}(0,1),
 \]
 with \(\sigma^2 = \mathrm{Var}(X)\).  
+$$
