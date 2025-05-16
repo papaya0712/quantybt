@@ -66,23 +66,28 @@ Although the strict i.i.d. assumptions are violated, empirical evidence often sh
 
 ### P-Value
 
-To quantitatively assess how significant our system outperforms the benchmark, we use a **non-parametric hypothesis test** based on empirical resampling. This allows us to test for significance **without making any assumptions about the distribution** of the performance metrics (such as Sharpe, Sortino, Calmar, etc.).
+To quantify how clearly our strategy outperforms the benchmark, we apply a **randomisation/bootstrap test** that makes **no distributional assumptions** about the performance metric (e.g., Sharpe, Sortino, Calmar).
 
-The idea is to compare the original observed metric to a distribution of metrics obtained from resampled return series (via Monte Carlo simulation or bootstrapping). Specifically, we compute a **two-sided p-value** as follows:
+**Procedure**
 
-Given:
-- $T_{\text{orig}}$: the performance metric from the original return series  
-- $T_1, T_2, \dots, T_N$: the corresponding metrics from $N$ resampled simulations
+Under the null hypothesis  
+\( H_0 \) (*no outperformance*), we generate \( N \) synthetic performance values \( T_i \) via **block bootstrap** of the excess return series (alternatively: permutation or sign-flip can be used).
 
-We define the p-value as:
+The **two-sided p-value** is computed as:
 
-$$
-p = \frac{2 \cdot \min\left(\#\{T_i \leq T_{\text{orig}}\},\; \#\{T_i \geq T_{\text{orig}}\}\right) + 1}{N + 1}
-$$
+\[
+p = \frac{2 \cdot \min \left( \#\{T_i \leq T_{\text{orig}}\},\; \#\{T_i \geq T_{\text{orig}}\} \right) + 1}{N + 1}
+\]
 
-This represents the probability of observing a value as extreme or more extreme than the original under the null hypothesis:
+For a one-sided test (pure outperformance or underperformance), the factor 2 is omitted.
 
-- **$H_0$ (null hypothesis):** The strategy's performance is statistically indistinguishable from what could arise by chance.
-- **$H_1$ (alternative hypothesis):** The observed performance is significantly better (or worse) than what would be expected by chance.
+**Interpretation**
 
-This test is robust to non-normality, skewness, and heteroscedasticity — making it particularly well-suited for financial return data.
+The p-value \( p \) expresses the probability, under \( H_0 \), of observing a test statistic as extreme as \( T_{\text{orig}} \) purely by chance.
+
+This method is robust to **non-normality**, **skewness**, and **heteroscedasticity**. However, if strong **serial correlation** is present in the data, a **block bootstrap** should be used to avoid variance distortion.
+
+**Hypotheses**
+
+- \( H_0 \): The strategy is statistically indistinguishable from random performance.  
+- \( H_1 \): The observed performance deviates significantly from randomness (better or worse, depending on test direction).
