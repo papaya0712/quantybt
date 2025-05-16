@@ -82,4 +82,19 @@ $$
 
 Where \( \varepsilon \) is a small constant to avoid division by zero.
 
+We define the total loss as:
+
+$$
+\text{Loss} = 
+- \underbrace{\frac{1}{N} \sum_{i=1}^{N} \text{ValMetric}_i}_{\text{Avg. OOS performance}} 
++ 
+\beta \cdot \underbrace{\left( \frac{\max\limits_{i=1,\dots,N} \text{GL}_i}{\text{scale}} \right)}_{\text{Generalization Loss Penalty}}
+$$
+
+Where:
+
+- \( \text{ValMetric}_i \): Out-of-sample performance (e.g. Sharpe, Calmar...) on fold \( i \)
+- \( \text{GL}_i = \frac{\text{TrainMetric}_i - \text{ValMetric}_i}{|\text{TrainMetric}_i| + \varepsilon} \)
+- \( \text{scale} \): Volatility stabilizer (e.g. std of last 10 diffs, clipped)
+- \( \beta \): Weighting parameter for GL penalty
 
