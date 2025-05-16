@@ -56,13 +56,14 @@ $$
 \varepsilon > 0.
 $$
 
-and 
+and
+
 $$
-\frac{\bar X_N - \mathbb{E}[X]}{\sigma / \sqrt{N}}
-\;\xrightarrow{d}\;
-\mathcal{N}(0,1),
+\frac{\bar X_N - \mathbb{E}[X]}{\sigma / \sqrt{N}} \xrightarrow{d} \mathcal{N}(0,1)
 $$
+
 with
+
 $$
-\sigma^2 = \mathrm{Var}(X).
+\sigma^2 = \mathrm{Var}(X)
 $$
