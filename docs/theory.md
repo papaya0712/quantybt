@@ -66,9 +66,20 @@ Although the strict i.i.d. assumptions are violated, empirical evidence often sh
 
 ---
 
-# Walkfoward Optimization and Generalization loss penalty 
+# Walkfoward Optimization and Generalization loss
 ### Why ?
 
-Relying on a single train-test split—where you optimize your hyperparameters on in-sample data (train fold) and evaluate on out-of-sample data (test fold)—is better than nothing, but still prone to overfitting.
+Relying on a single train-test split where you optimize your hyperparameters on in-sample data (train fold) and evaluate on out-of-sample data (test fold) is better than nothing, but still prone to overfitting.
 
 A more robust approach is **Walkforward Optimization**, where you use a rolling (or anchored) train/test window. This generates multiple smaller train-test splits across the entire dataset, providing a more reliable estimate of generalization performance and robustness.
+
+One step further is using a **Genralization loss function** which acts as penalty for massive underperfromance on unseend data and prevents even more overfitting. There are manye different ways to define your GL-function. One for example:
+
+
+$$
+\text{GL}_i = \frac{\text{TrainMetric}_i - \text{ValMetric}_i}{|\text{TrainMetric}_i| + \varepsilon}
+$$
+
+Where \( \varepsilon \) is a small constant to avoid division by zero.
+
+
