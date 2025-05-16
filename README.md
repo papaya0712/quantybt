@@ -140,7 +140,8 @@ mc = Bootstrapping(analyzer=analyzer, n_sims=10000, batch_size=500)
 
 ```text
 
-=== Empirical P-Value Tests (Simulated vs Benchmark) ===
+                 === Empirical P-Value Tests (Simulated vs Benchmark) ===
+
             Sharpe: p-value = 0.02597 | benchmark = 1.0074 | sim_mean = 1.8779
            Sortino: p-value = 0.02597 | benchmark = 1.4347 | sim_mean = 2.7074
             Calmar: p-value = 0.03596 | benchmark = 0.7370 | sim_mean = 2.6538
