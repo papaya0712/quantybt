@@ -1,10 +1,10 @@
-# 📘 Quantitative Strategy Theory
+# 📘 some nice and interesting background theory about stuff in this framework
 
-This document outlines the theoretical foundations used in the QuantyBT framework, including metric definitions and statistical methods.
+This document outlines the theoretical foundations used in the QuantyBT framework, including metric definitions statistical methods and algorithms
 
 ---
 
-## 📐 Sharpe Ratio
+## Sharpe Ratio
 
 We define:
 
@@ -20,19 +20,7 @@ Where:
 
 ---
 
-## 📉 Maximum Drawdown
-
-Defined as the worst peak-to-trough decline in equity:
-
-$$
-\text{MaxDrawdown} = \min_t \left( \frac{V_t - \max_{s \leq t} V_s}{\max_{s \leq t} V_s} \right)
-$$
-
-Where \( V_t \) is the equity curve value at time \( t \).
-
----
-
-## 📊 Monte Carlo P-Value Estimation
+## Monte Carlo Simulation and P-Value Estimation
 
 P-values for simulation significance testing are computed as:
 
