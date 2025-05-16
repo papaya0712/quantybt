@@ -138,4 +138,31 @@ mc = Bootstrapping(analyzer=analyzer, n_sims=10000, batch_size=500)
 
 ```
 
+```text
+=== Monte Carlo Simulation Summary ===
+     CumulativeReturn    Sharpe   Sortino    Calmar  MaxDrawdown
+std         32.322788  0.412371  0.614334  1.211303     0.074620
+min          1.072135  0.550521  0.782023  0.247903    -0.700616
+25%         14.237884  1.600357  2.290804  1.794304    -0.368881
+50%         24.962024  1.875816  2.701299  2.491695    -0.317156
+75%         42.779513  2.153406  3.127260  3.321080    -0.274771
+max        369.369812  3.231397  4.778637  8.042642    -0.179398
+
+=== Empirical P-Value Tests (Simulated vs Original) ===
+  CumulativeReturn: p-value = 0.99700 | original = 24.9780 | sim_mean = 34.1293
+            Sharpe: p-value = 0.99700 | original = 1.8784 | sim_mean = 1.8779
+           Sortino: p-value = 0.99700 | original = 2.7030 | sim_mean = 2.7074
+            Calmar: p-value = 0.28571 | original = 3.9488 | sim_mean = 2.6538
+       MaxDrawdown: p-value = 0.01199 | original = -0.2001 | sim_mean = -0.3288
+
+=== Empirical P-Value Tests (Simulated vs Benchmark) ===
+  CumulativeReturn: p-value = 0.36963 | benchmark = 11.4435 | sim_mean = 34.1293
+            Sharpe: p-value = 0.02597 | benchmark = 1.0074 | sim_mean = 1.8779
+           Sortino: p-value = 0.02597 | benchmark = 1.4347 | sim_mean = 2.7074
+            Calmar: p-value = 0.03596 | benchmark = 0.7370 | sim_mean = 2.6538
+       MaxDrawdown: p-value = 0.00200 | benchmark = -0.7727 | sim_mean = -0.3288
+
+
+```
+
 ![Backtest Plot](img/mc_plt.png)
