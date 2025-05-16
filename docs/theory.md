@@ -1,32 +1,29 @@
-# some nice and interesting background theory about stuff in this framework
+# some interesting background theory
 
-This document outlines the theoretical foundations used in the QuantyBT framework, including metric definitions statistical methods and algorithms
+This document outlines the theoretical foundations used the framework, including metric definitions/interpretations statistical methods and algorithms
 
 ---
 
 # Basics
 ### Sharpe Ratio
-
-We define:
-
 $$
-\text{Sharpe} = \frac{\mathbb{E}[r]}{\sigma[r]} \cdot \sqrt{T}
+\text{Sharpe} = \frac{\mathbb{E}[r]}{\sigma} \cdot \sqrt{T}
 $$
 
-Where:
+where:
 
 - $\mathbb{E}[r]$: expected return  
-- $\sigma[r]$: standard deviation  
+- $\sigma$: standard deviation  
 - $T$: annualization factor (using 365 days as base for crypto)
+- $r_f$: for non crypot-assets usual u add a risk-free return rate (e.d. treasury bills)
 
 ---
 
-### Monte Carlo Simulation and P-Value Estimation
-
-P-values for simulation significance testing are computed as:
-
+### Sortino Ratio
 $$
-p = \frac{\text{rank(original)} + 1}{\text{num simulations} + 1}
+\rext{Sortino} = \
 $$
 
-A lower `p` indicates that the original result is unlikely under random sampling.
+
+### Calmar Ratio
+
