@@ -2,6 +2,7 @@ from .strategy       import Strategy
 from .analyzer       import Analyzer
 from .optimizer      import AdvancedOptimizer
 from .montecarlo     import Bootstrapping
+from .regimes        import RegimeChangeAnalyzer
 from .sensitivity    import LocalSensitivityAnalyzer 
 from .stats          import Stats
 from .utils          import Utils
@@ -14,5 +15,6 @@ __all__ = [
     'AdvancedOptimizer',
     'Loader',
     'Bootstrapping',
-    'LocalSensitivityAnalyzer'
+    'LocalSensitivityAnalyzer',
+    'RegimeChangeAnalyzer'
 ]
