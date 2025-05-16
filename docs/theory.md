@@ -71,4 +71,4 @@ Although the strict i.i.d. assumptions are violated, empirical evidence often sh
 Only using a train-test split where you optimize your hyperparameter space on in sample data (train fold) and test them on unseen data (test fold) is better than nothin but still can lead to overfitting your system. 
 A more robust method is the Walkforward optimization where u use a rolling (or anchored) train/test window which results in more smaller train test splits over ur whole data. 
 
-![Rolling Window](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Rolling-origin-evaluation.svg/640px-Rolling-origin-evaluation.svg.png)
+![Walkforward Optimization](wfo_theory_img.png)
