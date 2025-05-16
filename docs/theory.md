@@ -32,5 +32,10 @@ Unlike the Sharpe Ratio, the Sortino Ratio **only penalizes downside volatility*
 ### Calmar Ratio
 
 $$
-\text{Calmar} = \frac{\text{CAGR}}{\text{Max Drawdown}}
+\text{Calmar} = \frac{\text{CAGR}}{|\text{Max Drawdown}|}, \quad \text{where} \quad 
+\text{CAGR} = \left(1 + \text{Cumulative Return} \right)^{T / N} - 1
 $$
+
+Where:
+- $N$: total number of periods in the return series
+- Cumulative Return = $\prod (1 + r_t) - 1$
