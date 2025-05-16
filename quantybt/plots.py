@@ -243,7 +243,7 @@ class _PlotBootstrapping:
                 y=[0, max_y],
                 mode='lines',
 
-                name=f"{name} Benchmark",
+                name=f"Benchmark",
                 marker=dict(color='purple'),  
                 showlegend=(row == 1 and col == 1)
             )
