@@ -47,9 +47,7 @@ Where:
 Using Monte Carlo methods gives you a better understanding of real risks in your trading system. In general we rely here on the **Weak Law of Large Numbers (WLLN)** and the **Central Limit Theorem (CLT)** from probability theory:
 
 $$
-\lim_{N \to \infty}
-\Pr\bigl(|\bar X_N - \mathbb{E}[X]| > \varepsilon\bigr)
-= 0,
+\lim_{N \to \infty} \Pr\bigl(|\bar X_N - \mathbb{E}[X]| > \varepsilon\bigr) = 0,
 $$
 where
 $$
@@ -58,7 +56,7 @@ $$
 \varepsilon > 0.
 $$
 
-**CLT**  
+and 
 $$
 \frac{\bar X_N - \mathbb{E}[X]}{\sigma / \sqrt{N}}
 \;\xrightarrow{d}\;
