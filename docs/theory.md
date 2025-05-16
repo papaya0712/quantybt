@@ -7,7 +7,7 @@ This document outlines the theoretical foundations used the framework, including
 # Basics
 ### Sharpe Ratio
 $$
-\text{Sharpe} = \frac{\mathbb{E}[r] - r_f}{\sigma} \cdot \sqrt{T}
+\text{Sharpe} = \frac{(\mathbb{E}[r] - r_f)}{\sigma} \cdot \sqrt{T}
 $$
 
 Where:
@@ -20,7 +20,7 @@ Where:
 ### Sortino Ratio
 
 $$
-\text{Sortino} = \frac{\mathbb{E}[r] - r_f}{\sigma_{\text{down}}} \cdot \sqrt{T}
+\text{Sortino} = \frac{(\mathbb{E}[r] - r_f)}{\sigma_{\text{down}}} \cdot \sqrt{T}
 $$
 
 Where:
