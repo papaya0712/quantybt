@@ -183,4 +183,3 @@ fig.show()
 ```
 ![Backtest Plot](img/mc_plt.png)
 
-
