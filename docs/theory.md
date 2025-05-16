@@ -64,3 +64,25 @@ The statistical rationale rests on two things:
 
 Although the strict i.i.d. assumptions are violated, empirical evidence often shows sufficiently normal-shaped distributions. If strong serial dependence is suspected, a block or stationary bootstrap is preferable.
 
+### P-Value
+
+To quantitatively assess how significant our system outperforms the benchmark, we use a **non-parametric hypothesis test** based on empirical resampling. This allows us to test for significance **without making any assumptions about the distribution** of the performance metrics (such as Sharpe, Sortino, Calmar, etc.).
+
+The idea is to compare the original observed metric to a distribution of metrics obtained from resampled return series (via Monte Carlo simulation or bootstrapping). Specifically, we compute a **two-sided p-value** as follows:
+
+Given:
+- $T_{\text{orig}}$: the performance metric from the original return series  
+- $T_1, T_2, \dots, T_N$: the corresponding metrics from $N$ resampled simulations
+
+We define the p-value as:
+
+$$
+p = \frac{2 \cdot \min\left(\#\{T_i \leq T_{\text{orig}}\},\; \#\{T_i \geq T_{\text{orig}}\}\right) + 1}{N + 1}
+$$
+
+This represents the probability of observing a value as extreme or more extreme than the original under the null hypothesis:
+
+- **$H_0$ (null hypothesis):** The strategy's performance is statistically indistinguishable from what could arise by chance.
+- **$H_1$ (alternative hypothesis):** The observed performance is significantly better (or worse) than what would be expected by chance.
+
+This test is robust to non-normality, skewness, and heteroscedasticity — making it particularly well-suited for financial return data.
