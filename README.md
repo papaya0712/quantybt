@@ -21,7 +21,7 @@
 
 - **More Metrics** for more confidence (VaR, CVaR, ...) 
 - **More Custom Models**  
-- **Portfolio Optimization** with advanced methods (HRP, CVaR, Maximum Entropy, ...)  
+- **Portfolio Optimization** with advanced methods (HRP, Maximum Entropy, ...)  
 - **Live integration**
 ---
 
