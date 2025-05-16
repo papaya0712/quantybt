@@ -7,15 +7,15 @@ This document outlines the theoretical foundations used the framework, including
 # Basics
 ### Sharpe Ratio
 $$
-\text{Sharpe} = \frac{\mathbb{E}[r]}{\sigma} \cdot \sqrt{T}
+\text{Sharpe} = \frac{\mathbb{E}[r] - r_f}{\sigma} \cdot \sqrt{T}
 $$
 
-where:
+Where:
 
 - $\mathbb{E}[r]$: expected return  
 - $\sigma$: standard deviation  
 - $T$: annualization factor (using 365 days as base for crypto)
-- $r_f$: for non crypot-assets usual u add a risk-free return rate (e.d. treasury bills)
+- $r_f$: risk-free return rate which usually derived from treasury bills. for crypto its typically 0 
 
 ---
 
