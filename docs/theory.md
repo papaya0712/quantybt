@@ -87,6 +87,7 @@ $$
 p = \frac{2 \cdot \min \left( \#\{T_i \leq T_{\text{orig}}\},\; \#\{T_i \geq T_{\text{orig}}\} \right) + 1}{N + 1}
 $$
 
+
 For a one-sided test, omit the factor 2.
 
 **Interpretation**
@@ -102,5 +103,5 @@ However, if strong **serial dependence** is present, a **block bootstrap** is es
 
 **Hypotheses**
 
-- \( H_0 \): The strategy is statistically indistinguishable from random performance.  
-- \( H_1 \): The observed performance deviates significantly from randomness (better or worse, depending on test direction).
+- $\( H_0 \)$: The strategy is statistically indistinguishable from random performance.  
+- $\( H_1 \)$: The observed performance deviates significantly from randomness (better or worse, depending on test direction).
