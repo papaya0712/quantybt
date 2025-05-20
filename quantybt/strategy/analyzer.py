@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from .plots import _PlotBacktest
 from .utils import Utils
 from .stats import Stats
-from .strategy import Strategy
+from .base_strategy import Strategy
 
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
