@@ -53,33 +53,41 @@ class Stats:
 
         return max_dd_strat, max_dd_bench, vola_strat, vola_bench
     
-    def _risk_adjusted_metrics(self, timeframe: str, pf: vbt.Portfolio) -> Tuple[float, float, float]:
-     returns = pf.returns().values  
+    def _risk_adjusted_metrics(self, timeframe: str, pf: vbt.Portfolio) -> Tuple[float, float, float, float, float, float]:
+     strat_returns = pf.returns().values  
+     bench_returns = pf.benchmark_returns().values  
      periods = self._annual_factor(timeframe, root=False)  
      rf = 0.0
 
-     # Sharpe Ratio
-     mean_ret = np.mean(returns - rf)
-     std_ret = np.std(returns, ddof=1)
-     sharpe = (mean_ret / std_ret) * np.sqrt(periods) if std_ret else np.nan        
+     def sharpe(returns):
+        mean_ret = np.mean(returns - rf)
+        std_ret = np.std(returns, ddof=1)
+        return (mean_ret / std_ret) * np.sqrt(periods) if std_ret else np.nan
 
-     # Sortino Ratio
-     rets = returns
-     target = 0.0
-     excess = rets - target
-     mean_exc = excess.mean()
-     downside = np.minimum(excess, 0)
-     rms_down = np.sqrt(np.mean(np.square(downside)))
-     downside_ann = rms_down * np.sqrt(periods)
-     sortino = (mean_exc * periods) / downside_ann if downside_ann else np.nan
+     def sortino(returns):
+        target = 0.0
+        excess = returns - target
+        downside = np.minimum(excess, 0)
+        rms_down = np.sqrt(np.mean(np.square(downside)))
+        downside_ann = rms_down * np.sqrt(periods)
+        mean_exc = excess.mean()
+        return (mean_exc * periods) / downside_ann if downside_ann else np.nan
 
-     # Calmar Ratio
-     cum_ret = np.prod(1 + returns) - 1
-     annual_ret = (1 + cum_ret) ** (periods / len(returns)) - 1
-     max_dd = abs(pf.max_drawdown())
-     calmar = annual_ret / max_dd if max_dd else np.nan
-
-     return sharpe, sortino, calmar
+     def calmar(returns, max_dd):
+        cum_ret = np.prod(1 + returns) - 1
+        annual_ret = (1 + cum_ret) ** (periods / len(returns)) - 1
+        return annual_ret / max_dd if max_dd else np.nan
+     
+     max_dd_strat = abs(pf.max_drawdown())
+     max_dd_bench = abs(pf.benchmark_max_drawdown()) if hasattr(pf, "benchmark_max_drawdown") else np.nan
+     return (
+        sharpe(strat_returns),
+        sortino(strat_returns),
+        calmar(strat_returns, max_dd_strat),
+        sharpe(bench_returns),
+        sortino(bench_returns),
+        calmar(bench_returns, max_dd_bench)
+     )
     
     def _correlation_to_benchmark(self, pf: vbt.Portfolio) -> float:
      strat_returns = pf.returns().values
@@ -89,49 +97,114 @@ class Stats:
 
      return np.corrcoef(strat_returns, bench_returns)[0, 1]
 
+    def _alpha_beta(self, pf: vbt.Portfolio, timeframe: str, rf: float = 0.0) -> Tuple[float, float]:
+     strat_returns = pf.returns().dropna().values
+     bench_returns = pf.benchmark_returns().dropna().values
+
+     if len(strat_returns) != len(bench_returns):
+        return np.nan, np.nan
+
+     periods = self._annual_factor(timeframe, root=False)
+
+   
+     excess_strat = strat_returns - rf
+     excess_bench = bench_returns - rf
+     cov = np.cov(excess_strat, excess_bench)[0, 1]
+     var = np.var(excess_bench)
+     beta = cov / var if var != 0 else np.nan
+
+     mean_strat_ann = (1 + np.mean(strat_returns)) ** periods - 1
+     mean_bench_ann = (1 + np.mean(bench_returns)) ** periods - 1
+
+     alpha = mean_strat_ann - (rf + beta * (mean_bench_ann - rf)) if not np.isnan(beta) else np.nan
+
+     return alpha * 100, beta  # Alpha in %
+    
+    def _risk_of_ruin(self, win_rate: float, avg_win: float, avg_loss: float, risk_per_trade: float = 0.01, ruin_threshold: float = 1.0) -> float:
+     if avg_loss == 0:
+         return np.nan 
+     R = avg_win / abs(avg_loss)
+     edge = win_rate * R - (1 - win_rate)
+     if edge <= 0:
+        return 1.0  # 100%r
+     base = (1 - edge) / (1 + edge)
+     n_trades = ruin_threshold / risk_per_trade
+     return base ** n_trades
+    
+    def kelly_fraction(self, win_rate: float, avg_win: float, avg_loss: float) -> float:
+    
+     if avg_loss == 0 or avg_win is None or avg_loss is None or win_rate is None:
+        return np.nan
+
+     R = avg_win / abs(avg_loss)
+     kelly = win_rate - (1 - win_rate) / R
+     return max(0.0, kelly)
+    
     def backtest_summary(self, pf: vbt.Portfolio, timeframe: str) -> pd.DataFrame:
-     stats = pf.stats()   
-     perf_strat, perf_bench = self._returns(pf)              # [%]
-     periods_per_year       = self._annual_factor(timeframe, root=False)
+        
 
-     cagr_strat = self._cagr_from_returns(pf.returns(), periods_per_year) * 100
-     try:
-        cagr_bench = self._cagr_from_returns(pf.benchmark_returns(), periods_per_year) * 100
-     except AttributeError:
-        cagr_bench = np.nan
+        perf_strat, perf_bench          = self._returns(pf)       
+        periods_per_year                = self._annual_factor(timeframe, root=False)
 
-     dd_strat, dd_bench, vola_strat, vola_bench = self._risk_metrics(timeframe, pf)
-     sharpe, sortino, calmar                    = self._risk_adjusted_metrics(timeframe, pf)
-     corr                                        = self._correlation_to_benchmark(pf)
+        cagr_strat = self._cagr_from_returns(pf.returns(),              periods_per_year) * 100
+        cagr_bench = self._cagr_from_returns(pf.benchmark_returns(),    periods_per_year) * 100 \
+                     if hasattr(pf, "benchmark_returns") else np.nan
 
-     g = stats.get
-     summary = {
-        # performance
-        "CAGR [%]":                            round(cagr_strat, 2),
-        "Benchmark CAGR [%]":                  round(cagr_bench, 2),
-        "Strategy Performance [%]":            round(perf_strat, 2),
-        "Benchmark Performance [%]":           round(perf_bench, 2),
-        # risk
-        "Strategy Max Drawdown [%]":           round(dd_strat, 2),
-        "Benchmark Max Drawdown [%]":          round(dd_bench, 2),
-        "Annualized Strategy Volatility [%]":  round(vola_strat, 2),
-        "Annualized Benchmark Volatility [%]": round(vola_bench, 2),
-        "Sharpe Ratio":                        round(sharpe, 2),
-        "Sortino Ratio":                       round(sortino, 2),
-        "Calmar Ratio":                        round(calmar, 2),
-        # other
-        "Profit Factor":                       round(g("Profit Factor", np.nan), 2),
-        "Correlation to Benchmark":            round(corr, 2),
-        "Total Trades":                        int(g("Total Trades", 0)),
-        "Win Rate [%]":                        round(g("Win Rate [%]", np.nan), 2),
-        "Best Trade [%]":                      round(g("Best Trade [%]", np.nan), 2),
-        "Worst Trade [%]":                     round(g("Worst Trade [%]", np.nan), 2),
-        "Avg Winning Trade [%]":               round(g("Avg Winning Trade [%]", np.nan), 2),
-        "Avg Losing Trade [%]":                round(g("Avg Losing Trade [%]", np.nan), 2),
-        "Avg Winning Trade Duration":          g("Avg Winning Trade Duration", np.nan),
-        "Avg Losing Trade Duration":           g("Avg Losing Trade Duration", np.nan),
-     }
+        dd_strat, dd_bench, vola_strat, vola_bench = self._risk_metrics(timeframe, pf)
+        sharpe, sortino, calmar, sharpe_b, sortino_b, calmar_b = self._risk_adjusted_metrics(timeframe, pf)
+        corr                                        = self._correlation_to_benchmark(pf)
+        
+        stats = pf.stats()
+        g = stats.get 
 
-     return pd.DataFrame.from_dict(summary, orient="index", columns=["Value"])
+        alpha, beta = self._alpha_beta(pf, timeframe=timeframe)
+        win_rate  = g("Win Rate [%]", np.nan) / 100
+        avg_win   = g("Avg Winning Trade [%]", np.nan) / 100
+        avg_loss  = g("Avg Losing Trade [%]", np.nan) / 100
+
+        kelly = self.kelly_fraction(win_rate, avg_win, avg_loss)
+
+        ror_100   = self._risk_of_ruin(win_rate, avg_win, avg_loss, risk_per_trade=kelly, ruin_threshold=1.0)
+        ror_50    = self._risk_of_ruin(win_rate, avg_win, avg_loss, risk_per_trade=kelly, ruin_threshold=0.5)
+
+
+        data = {
+            "CAGR [%]":                             (cagr_strat,            cagr_bench),
+            "Total Return [%]":                     (perf_strat,            perf_bench),
+            "Max Drawdown [%]":                     (dd_strat,              dd_bench),
+            "Annualized Volatility [%]":            (vola_strat,            vola_bench),
+            "Sharpe Ratio":                         (sharpe,                sharpe_b),
+            "Sortino Ratio":                        (sortino,               sortino_b),
+            "Calmar Ratio":                         (calmar,                calmar_b),
+            "Profit Factor":                        (g("Profit Factor"),    np.nan),
+            "Correlation to Benchmark":             (corr,                  np.nan),
+            "Alpha [%]": (round(alpha, 4), np.nan),
+            "Beta":      (round(beta, 4),  np.nan),
+            "Kelly [%]":                            (round(kelly * 100, 2), np.nan),
+            "RoR100, risk=kelly":                   (ror_100,               np.nan),
+            "RoR50,  risk=kelly":                   (ror_50,                np.nan),
+            
+
+            "--------------------------------": ("", ""),
+            "Total Trades":                         (g("Total Trades", 0),  np.nan),
+            "Win Rate [%]":                         (g("Win Rate [%]"),     np.nan),
+            "Best Trade [%]":                       (g("Best Trade [%]"),   np.nan),
+            "Worst Trade [%]":                      (g("Worst Trade [%]"),  np.nan),
+            "Avg Winning Trade [%]":                (g("Avg Winning Trade [%]"), np.nan),
+            "Avg Losing Trade [%]":                 (g("Avg Losing Trade [%]"),  np.nan),
+            "Avg Winning Trade Duration":           (g("Avg Winning Trade Duration"), np.nan),
+            "Avg Losing Trade Duration":            (g("Avg Losing Trade Duration"),  np.nan),
+            
+            }
+
+
+        summary_df = pd.DataFrame.from_dict(data, orient="index", columns=["Strategy", "Benchmark"])
+        for col in summary_df.columns:
+            summary_df[col] = summary_df[col].apply(
+                lambda x: round(x, 2) if isinstance(x, (int, float, np.floating)) else x
+            )
+
+
+        return summary_df
 
 #
