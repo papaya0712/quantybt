@@ -79,11 +79,6 @@ $$
 \text{Loss} = -\overline{\text{ValMetric}} + \beta \cdot \frac{\max(\text{GL})}{\text{scale}}
 $$
 
-Where:
-
-- \( \overline{\text{ValMetric}} \): average validation metric over all folds  
-- \( \text{GL} = 1 - \frac{\text{ValMetric}_i}{\text{TrainMetric}_i} \) for each fold  
-- \( \text{scale} \): rolling standard deviation of recent loss values  
-- \( \beta \): penalty weight controlling tradeoff between performance and robustness
+Where \( \varepsilon \) is a small constant to avoid division by zero.
 
 This penalizes sharp degradation between in-sample and out-of-sample performance, especially when it’s unstable over recent evaluations.
