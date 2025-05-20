@@ -123,27 +123,31 @@ analyzer.plot_backtest()
 ```
 
 ```text
-CAGR [%]                                                 79.03
-Benchmark CAGR [%]                                       56.95
-Strategy Performance [%]                               2497.84
-Benchmark Performance [%]                              1144.35
-Strategy Max Drawdown [%]                               -20.01
-Benchmark Max Drawdown [%]                              -77.27
-Annualized Strategy Volatility [%]                        34.1
-Annualized Benchmark Volatility [%]                      66.97
-Sharpe Ratio                                              1.88
-Sortino Ratio                                              2.7
-Calmar Ratio                                              3.95
-Profit Factor                                             1.99
-Correlation to Benchmark                                  0.51
-Total Trades                                               328
-Win Rate [%]                                             37.92
-Best Trade [%]                                           31.94
-Worst Trade [%]                                          -5.82
-Avg Winning Trade [%]                                     5.38
-Avg Losing Trade [%]                                     -1.47
-Avg Winning Trade Duration           3 days 12:48:30.483870967
-Avg Losing Trade Duration            1 days 08:28:53.497536945
+Metric                                             Strategy   Benchmark
+
+CAGR [%]                                              79.03     56.95
+Total Return [%]                                    2497.84   1144.35
+Max Drawdown [%]                                     -20.01    -77.27
+Annualized Volatility [%]                              34.1     66.97
+Sharpe Ratio                                           1.88      1.01
+Sortino Ratio                                           2.7      1.43
+Calmar Ratio                                           3.95       NaN
+Profit Factor                                          1.99       NaN
+Correlation to Benchmark                               0.51       NaN
+Alpha [%]                                             64.79       NaN
+Beta                                                   0.26       NaN
+Kelly [%]                                             20.96       NaN
+RoR100, risk=kelly                                      0.0       NaN
+RoR50,  risk=kelly                                     0.01       NaN
+--------------------------------                                     
+Total Trades                                            328       NaN
+Win Rate [%]                                          37.92       NaN
+Best Trade [%]                                        31.94       NaN
+Worst Trade [%]                                       -5.82       NaN
+Avg Winning Trade [%]                                  5.38       NaN
+Avg Losing Trade [%]                                  -1.47       NaN
+Avg Winning Trade Duration        3 days 12:48:30.483870967       NaN
+Avg Losing Trade Duration         1 days 08:28:53.497536945       NaN
 ```
 ![Backtest Plot](img/backtest_plt.png)
 

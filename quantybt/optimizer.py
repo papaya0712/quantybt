@@ -201,7 +201,7 @@ class AdvancedOptimizer:
         
         seed = int(abs(hash(frozenset(params.items()))) % 2**32)
         np.random.seed(seed)
-
+        
         losses, is_metrics, val_metrics = [], [], []
         higher_is_better = self.target_metric not in ["max_drawdown", "volatility"]
 
