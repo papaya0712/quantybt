@@ -193,8 +193,14 @@ class AdvancedOptimizer:
 
     @staticmethod
     def _choose_direction(sig: Dict[str, Any]) -> str:
-        has_short = sig.get("short_entries") is not None or sig.get("short_exits") is not None
-        return "all" if has_short else "longonly"
+        has_short = sig.get("short_entries") is not None and sig.get("short_exits") is not None
+        has_long = sig.get("entries") is not None and sig.get("exits") is not None
+        if has_long and has_short:
+            return "both"
+        elif has_short:
+            return "shortonly"
+        else:
+            return "longonly"
 
     def _objective(self, params: dict) -> dict:
      try:
