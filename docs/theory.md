@@ -79,6 +79,4 @@ $$
 \text{Loss} = -\overline{\text{ValMetric}} + \beta \cdot \frac{\max(\text{GL})}{\text{scale}}
 $$
 
-Where \( \varepsilon \) is a small constant to avoid division by zero.
-
 This penalizes sharp degradation between in-sample and out-of-sample performance, especially when it’s unstable over recent evaluations.
