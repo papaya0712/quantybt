@@ -79,4 +79,7 @@ $$
 \text{Loss} = -\overline{\text{ValMetric}} + \beta \cdot \frac{\max(\text{GL})}{\text{scale}}
 $$
 
+> **Note:** This formula penalizes even if \( \text{ValMetric}_{\text{OOS}} > \text{Benchmark} \), as long as \( \text{ValMetric}_{\text{OOS}} < \text{TrainMetric}_{\text{IS}} \).
+
+
 This penalizes sharp degradation between in-sample and out-of-sample performance, especially when it’s unstable over recent evaluations.
