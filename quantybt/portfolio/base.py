@@ -9,5 +9,15 @@ class BaseModel:
        def __init__(self):
               pass
 
+       def _validate_input(self):
+              pass
+
+
+
+
        
+
+       
+
+
         
