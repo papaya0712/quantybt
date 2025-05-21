@@ -20,10 +20,8 @@ class Loader:
     ```
     This will download the data and save each symbol's OHLCV history as a Feather file in the specified directory.
 
-    !!! Warning:
-    In some countries, access to ccxt's Binance API may be restricted.
-    If you encounter issues, manually download the Binance data yourself,
-    or modify this script to use a different exchange via ccxt.
+    Note: 
+    - u can change the exchange but from my own experience, this config has the best data history and good quality
     """
 
     def __init__(self,
