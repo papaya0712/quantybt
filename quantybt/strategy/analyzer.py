@@ -6,6 +6,7 @@ from .utils import Utils
 from .stats import Stats
 from .base_strategy import Strategy
 
+import os
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
@@ -147,5 +148,32 @@ class Analyzer:
 
     def plot_backtest(self, title: str = 'Backtest Results'):
         return _PlotBacktest(self).plot_backtest(title=title)
+    
+    def export_trades(self, file_name: Optional[str] = 'strategy_report', save_dir: str = r"path"):
+        """
+        returns .csv with all trade information, columns:
+        - Exit Trade Id	
+        - Column	
+        - Size	
+        - Entry Timestamp	
+        - Avg Entry Price	
+        - Entry Fees	
+        - Exit Timestamp 	
+        - Avg Exit Price	
+        - Exit Fees	
+        - PnL	
+        - Return	
+        - Direction	
+        - Status	
+        - Position Id
+
+        entry & exit timestamp column are not in datetime format, its candle index
+        """
+        trades = self.pf.trades.records_readable.copy()
+        os.makedirs(save_dir, exist_ok=True)
+        file_path = os.path.join(save_dir, f"{file_name}.csv")
+        trades.to_csv(file_path, index=False)
+        print(f"Trades successfully exported to: {file_path}")
+
 
 #
