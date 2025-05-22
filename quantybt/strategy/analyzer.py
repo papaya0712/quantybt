@@ -150,7 +150,7 @@ class Analyzer:
         return _PlotBacktest(self).plot_backtest(title=title)
     
     def export_trades(self, file_name: Optional[str] = 'strategy_report', save_dir: str = r"path"):
-  
+   
      trades = self.pf.trades.records_readable.copy()
      os.makedirs(save_dir, exist_ok=True)
 
@@ -158,7 +158,7 @@ class Analyzer:
         file_name += '.feather'
 
      file_path = os.path.join(save_dir, file_name)
-     trades.reset_index(drop=True).to_feather(file_path)
+     trades.reset_index(drop=True).to_feather(file_path)  
      print(f"Trades successfully exported to: {file_path}")
 
 #
