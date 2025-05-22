@@ -6,22 +6,20 @@
 ## Features
 
 - **Simple integration** with vectorbt as the backtesting engine.
-- **Custom Model Support**: Native wrappers for custom-implemented models (e.g., Kalman Filters) and statistical frameworks.  
 - **Built-in data loaders** for cryptocurrencies from Binance (no api needed).
 - **Modular architecture**: define strategies by inheriting from a base `Strategy` class (`preprocess`, `generate_signals`, `param_space`).
 - **Robust Validation**: Out-of-sample splits and hyperparameter tuning via [Hyperopt](https://github.com/hyperopt/hyperopt).
 - **Walkforward-Optimization**: with generalization loss function for dynamic overfitting control  
-- **Statistical analysis tools**: Monte Carlo simulations
-- **Parameter Sensitivity**: finite differences for local sensitivity (global incoming) 
+- **Statistical analysis tools**: Monte Carlo simulations with p-values
+- **Parameter Sensitivity**: for local and global sensitivity analysis
 - **Performance reporting**: generate equity curves, heatmaps, and metric summaries with minimal boilerplate.
 
 ---
 
 ## Incoming Features
 
-- **More Metrics** for more confidence (VaR, CVaR, ...) 
-- **More Custom Models**  
-- **Portfolio Optimization** with advanced methods (HRP, Maximum Entropy, ...)  
+- **Custom Models**  build in custom models (Kalmanfilter, Hawkes Processes, ...) with online streaming ability
+- **Portfolio Optimization** Correlation Analyzer, HRP, Black-Litterman, ...  
 - **vbt "from_orders" logic** maybe will be added for better limit order and position sizing simulations
 ---
 
@@ -131,23 +129,23 @@ Max Drawdown [%]                                     -20.01    -77.27
 Annualized Volatility [%]                              34.1     66.97
 Sharpe Ratio                                           1.88      1.01
 Sortino Ratio                                           2.7      1.43
-Calmar Ratio                                           3.95       NaN
-Profit Factor                                          1.99       NaN
-Correlation to Benchmark                               0.51       NaN
-Alpha [%]                                             64.79       NaN
-Beta                                                   0.26       NaN
-Kelly [%]                                             20.96       NaN
-RoR100, risk=kelly                                      0.0       NaN
-RoR50,  risk=kelly                                     0.01       NaN
+Calmar Ratio                                           3.95       
+Profit Factor                                          1.99       
+Correlation to Benchmark                               0.51       
+Alpha [%]                                             64.79       
+Beta                                                   0.26       
+Kelly [%]                                             20.96       
+RoR100, risk=kelly                                      0.0       
+RoR50,  risk=kelly                                     0.01       
 --------------------------------                                     
-Total Trades                                            328       NaN
-Win Rate [%]                                          37.92       NaN
-Best Trade [%]                                        31.94       NaN
-Worst Trade [%]                                       -5.82       NaN
-Avg Winning Trade [%]                                  5.38       NaN
-Avg Losing Trade [%]                                  -1.47       NaN
-Avg Winning Trade Duration        3 days 12:48:30.483870967       NaN
-Avg Losing Trade Duration         1 days 08:28:53.497536945       NaN
+Total Trades                                            328       
+Win Rate [%]                                          37.92       
+Best Trade [%]                                        31.94       
+Worst Trade [%]                                       -5.82       
+Avg Winning Trade [%]                                  5.38       
+Avg Losing Trade [%]                                  -1.47       
+Avg Winning Trade Duration        3 days 12:48:30.483870967       
+Avg Losing Trade Duration         1 days 08:28:53.497536945       
 ```
 ![Backtest Plot](img/backtest_plt.png)
 
@@ -173,7 +171,7 @@ print(mc_results)
 ```
 ```text
 === Empirical P-Value Tests (Simulated vs Benchmark) ===
-  
+       _______________________________________________________________________
             Sharpe: p-value = 0.03960 | benchmark = 1.0074 | sim_mean = 1.8808
            Sortino: p-value = 0.04080 | benchmark = 1.4347 | sim_mean = 2.7117
             Calmar: p-value = 0.03820 | benchmark = 0.7370 | sim_mean = 2.6505
