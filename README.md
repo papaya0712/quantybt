@@ -15,7 +15,7 @@
 
 - **AdvancedOptimizer**  
   Walk-forward optimizer supporting both **rolling** and **anchored** validation modes.  
-  Powered by [Hyperopt (TPE)](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search.  
+  Using **Bayesian Optimization** via [Hyperopt (TPE)](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search.  
   Includes a built-in **Generalization Loss penalty function** to dynamically penalize overfitting.
 
 - **Bootstrapping**  
@@ -174,7 +174,7 @@ Avg Winning Trade [%]                                  5.38
 Avg Losing Trade [%]                                  -1.47       
 Avg Winning Trade Duration        3 days 12:48:30.483870967       
 Avg Losing Trade Duration         1 days 08:28:53.497536945
-       
+
 ```
 ![Backtest Plot](img/backtest_plt.png)
 
