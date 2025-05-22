@@ -1,6 +1,6 @@
 # QuantyBT 🪐
 
-**A lightweight framework for quantitative backtesting and portfolio research, based on [vectorbt](https://github.com/polakowo/vectorbt). Focused on statistical robustness, modularity, and seamless integration of strategies, models, and crypto-native data.**  
+**A framework for quantitative backtesting and portfolio optimization, based on [vectorbt](https://github.com/polakowo/vectorbt). Focused on statistical robustness, modularity, and seamless integration of strategies, models, and crypto-native data.**  
 ---
 
 ## Current Models
@@ -37,7 +37,7 @@
 ### 🔸 Portfolio Modules
 
 - **EqualWeightPortfolio**  
-   Naive 1/n allocation model for aggregated strategy returns.
+   Naive 1/n allocation model for aggregated strategy returns. Suppots Montecarlo Bootstrapping.
 
 - **CorrelationAnalyzer**  
    Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
@@ -51,7 +51,7 @@
 ---
 
 ## Install
-
+Local install recommended for custom changes
 ```bash
 git clone https://github.com/papaya0712/quantybt.git
 ```
