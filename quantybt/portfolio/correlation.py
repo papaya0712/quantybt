@@ -94,9 +94,9 @@ class SimpleCorrelationAnalyzer(BaseModel):
 
         # Ausgabe
         print(f"Pearson Correlation: {corr_pearson:.4f}")
+        print(f"Correlation only on active days: {corr_active:.4f}")
         print(f"Spearman Correlation: {corr_spearman:.4f}")
         print(f"Kendall-Tau Correlation: {corr_kendall:.4f}")
-        print(f"Correlation only on active days: {corr_active:.4f}")
         print(f"Clayton θ (lower tail): {theta_clayton:.4f}, λₗ={lambda_lower:.4f}")
         print(f"Gumbel θ (upper tail): {theta_gumbel:.4f}, λᵤ={lambda_upper:.4f}")
 

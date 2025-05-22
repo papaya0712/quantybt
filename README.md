@@ -40,10 +40,7 @@
    Naive 1/n allocation model for aggregated strategy returns. Suppots Montecarlo Bootstrapping.
 
 - **CorrelationAnalyzer**  
-   Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
-
-- **Black-Litterman** (Incoming)   
-   Combines implied market equilibrium returns with subjective strategy views to derive blended portfolio weights.
+   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations for better risk-management
 
 - **HRP** (Incoming)   
    Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
