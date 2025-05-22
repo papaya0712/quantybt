@@ -155,8 +155,8 @@ class Analyzer:
      """
      trades = self.pf.trades.records_readable.copy()
      os.makedirs(save_dir, exist_ok=True)
-     file_path = os.path.join(save_dir, f"{file_name}.csv")
-     trades.to_csv(file_path, index=False)
+     file_path = os.path.join(save_dir, f"{file_name}")
+     trades.to_feather(file_path, index=False)
      print(f"Trades successfully exported to: {file_path}")
 
 #
