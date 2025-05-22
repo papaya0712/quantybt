@@ -109,8 +109,8 @@ class Stats:
    
      excess_strat = strat_returns - rf
      excess_bench = bench_returns - rf
-     cov = np.cov(excess_strat, excess_bench)[0, 1]
-     var = np.var(excess_bench)
+     cov = np.cov(excess_strat, excess_bench, ddof=0)[0, 1]
+     var = np.var(excess_bench, ddof=0)
      beta = cov / var if var != 0 else np.nan
 
      mean_strat_ann = (1 + np.mean(strat_returns)) ** periods - 1
@@ -118,7 +118,7 @@ class Stats:
 
      alpha = mean_strat_ann - (rf + beta * (mean_bench_ann - rf)) if not np.isnan(beta) else np.nan
 
-     return alpha * 100, beta  # Alpha in %
+     return alpha, beta  
     
     def _risk_of_ruin(self, win_rate: float, avg_win: float, avg_loss: float, risk_per_trade: float = 0.01, ruin_threshold: float = 1.0) -> float:
      if avg_loss == 0:
@@ -178,7 +178,7 @@ class Stats:
             "Calmar Ratio":                         (calmar,                calmar_b),
             "Profit Factor":                        (g("Profit Factor"),         ""),
             "Correlation to Benchmark":             (corr,                       ""),
-            "Alpha [%]": (round(alpha, 4), ""),
+            "Alpha    ": (round(alpha, 4), ""),
             "Beta":      (round(beta, 4),  ""),
             "Kelly [%]":                            (round(kelly * 100, 2),      ""),
             "Risk of Ruin 100% , risk=kelly":       (ror_100,                    ""),
