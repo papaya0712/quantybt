@@ -206,16 +206,20 @@ class LocalSensitivityAnalyzer:
 
 # Gridsearch for 2 params
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import multiprocessing
+
 class Gridsearcher:
     """
-    2D-Gridsearch for simple global sensitivity analysis
-    
+    2D-Gridsearch for simple global sensitivity analysis.
+
     Parameters:
-        analyzer: 
+        analyzer: Backtest-Engine (wie in LSA)
         x: dict  {"param": "paramname", "from": a, "to": b, "by": step}
         y: dict  {"param": "paramname", "from": a, "to": b, "by": step}
-        metric: target metric ( e.d. "sharpe_ratio", "max_drawdown", ...)
+        metric: str, Zielmetrik (e.g. "sharpe_ratio")
     """
+
     def __init__(self, analyzer, x: dict, y: dict, metric="sharpe_ratio"):
         self.analyzer = analyzer
         self.x = x
@@ -224,6 +228,7 @@ class Gridsearcher:
         self.base_params = analyzer.params
         self.tf = analyzer.timeframe
         self.stats = analyzer.s
+        self.df_result = None
 
         self.metric_funcs = {
             "sharpe_ratio":  lambda pf: self.stats._risk_adjusted_metrics(self.tf, pf)[0],
@@ -256,33 +261,47 @@ class Gridsearcher:
         )
         return analyzer.pf
 
-    def run(self):
-     results = []
-     x_vals, y_vals = self._create_grid()
-     total = len(x_vals) * len(y_vals)
+    def run(self, max_workers=None):
+        x_vals, y_vals = self._create_grid()
+        grid = [(xv, yv) for xv in x_vals for yv in y_vals]
+        total = len(grid)
 
-     for xv, yv in tqdm([(x, y) for x in x_vals for y in y_vals], total=total, desc="Gridsearch"):
-        params = {
-            self.x["param"]: xv,
-            self.y["param"]: yv
-        }
-        try:
-            pf = self._run_backtest(params)
-            score = self.metric_funcs[self.metric](pf)
-        except Exception as e:
-            print(f"[Error] ({xv}, {yv}) failed: {e}")
-            score = np.nan
-        results.append((xv, yv, score))
+        if max_workers is None:
+            max_workers = max(1, multiprocessing.cpu_count() - 2)
 
-     self.df_result = pd.DataFrame(results, columns=[self.x["param"], self.y["param"], self.metric])
-     return self.df_result
+        results = []
 
-    def plot_heatmap(self, figsize=(10, 10), annot=True, fmt=".2f", cmap="viridis"):
+        def task(xv, yv):
+            params = {
+                self.x["param"]: xv,
+                self.y["param"]: yv
+            }
+            try:
+                pf = self._run_backtest(params)
+                score = self.metric_funcs[self.metric](pf)
+            except Exception as e:
+                print(f"[Error] ({xv}, {yv}) failed: {e}")
+                score = np.nan
+            return (xv, yv, score)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(task, xv, yv): (xv, yv) for xv, yv in grid}
+            pbar = tqdm(total=total, desc="Parallel Gridsearch")
+            for future in as_completed(futures):
+                results.append(future.result())
+                pbar.update(1)
+            pbar.close()
+
+        self.df_result = pd.DataFrame(results, columns=[self.x["param"], self.y["param"], self.metric])
+        return self.df_result
+
+    def plot_heatmap(self, figsize=(8, 8), annot=True, fmt=".2f", cmap="viridis"):
     
      if not hasattr(self, "df_result"):
         raise ValueError("Please run .run() first.")
 
      import matplotlib.pyplot as plt
+     plt.style.use('dark_background')
      import seaborn as sns
 
      df_pivot = self.df_result.pivot(index=self.y["param"], columns=self.x["param"], values=self.metric)
@@ -301,6 +320,6 @@ class Gridsearcher:
      plt.ylabel(self.y["param"])
      plt.tight_layout()
      plt.show()
-
+     
 # Morris 
 
