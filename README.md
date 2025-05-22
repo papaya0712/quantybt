@@ -1,29 +1,57 @@
 # QuantyBT 🪐
 
-**A lightweight backtesting framework based on [vectorbt](https://github.com/polakowo/vectorbt), focused on statistical robustness, modularity, and seamless strategy integration with custom models and crypto-native data loading.**  
+**A lightweight framework for quantitative backtesting and portfolio research, based on [vectorbt](https://github.com/polakowo/vectorbt). Focused on statistical robustness, modularity, and seamless integration of strategies, models, and crypto-native data.**  
 ---
 
-## Features
+## Current Models
 
-- **Simple integration** with vectorbt as the backtesting engine.
-- **Built-in data loaders** for cryptocurrencies from Binance (no api needed).
-- **Modular architecture**: define strategies by inheriting from a base `Strategy` class (`preprocess`, `generate_signals`, `param_space`).
-- **Robust Validation**: Out-of-sample splits and hyperparameter tuning via [Hyperopt](https://github.com/hyperopt/hyperopt).
-- **Walkforward-Optimization**: with generalization loss function for dynamic overfitting control  
-- **Statistical analysis tools**: Monte Carlo simulations with p-values
-- **Parameter Sensitivity**: for local and global sensitivity analysis
-- **Performance reporting**: generate equity curves, heatmaps, and metric summaries with minimal boilerplate.
+### 🔹 Strategy Modules
+
+- **Strategy**  
+  Abstract base class for building custom trading strategies with modular signal and parameter structure.
+
+- **Analyzer**  
+  Simple `vectorbt`-based backtester. Outputs full performance metrics, equity curves, drawdown charts, and summary stats with minimal config.
+
+- **AdvancedOptimizer**  
+  Walk-forward optimizer supporting both **rolling** and **anchored** validation modes.  
+  Powered by [Hyperopt (TPE)](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search.  
+  Includes a built-in **Generalization Loss penalty function** to dynamically penalize overfitting.
+
+- **Bootstrapping**  
+  Monte Carlo simulation engine for risk estimation and statistical robustness.  
+  Outputs full distribution metrics and p-values for Sharpe, Sortino, Calmar, Max Drawdown, and more.
+
+- **LocalSensitivityAnalyzer**  
+  Uses finite-difference-style perturbations to quickly screen for unstable or sensitive parameters.
+
+- **GlobalSensitivityAnalyzer**  
+  Performs full grid search across 2D parameter space for global insight into strategy behavior. (Morris screening already planned)
+
+- **Loader**  
+  Integrated crypto data loader using [CCXT](https://github.com/ccxt/ccxt).  
+  Fetches and saves Binance historical data, no API key required.
 
 ---
 
-## Incoming Features
+### 🔸 Portfolio Modules
 
-- **Custom Models**  build in custom models (Kalmanfilter, Hawkes Processes, ...) with online streaming ability
-- **Portfolio Optimization** Correlation Analyzer, HRP, Black-Litterman, ...  
-- **vbt "from_orders" logic** maybe will be added for better limit order and position sizing simulations
+- **EqualWeightPortfolio**  
+  Naive 1/n allocation model for aggregated strategy returns.
+
+- **CorrelationAnalyzer**  
+  Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
+
+- **BlackLitterman** (incoming)
+  Combines implied market equilibrium returns with subjective strategy views to derive blended portfolio weights.
+
+- **HRP** (incoming)  
+  Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
+
 ---
 
 ## Install
+
 ```bash
 git clone https://github.com/papaya0712/quantybt.git
 ```
