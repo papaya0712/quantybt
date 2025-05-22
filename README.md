@@ -37,16 +37,16 @@
 ### 🔸 Portfolio Modules
 
 - **EqualWeightPortfolio**  
-  Naive 1/n allocation model for aggregated strategy returns.
+   Naive 1/n allocation model for aggregated strategy returns.
 
 - **CorrelationAnalyzer**  
-  Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
+   Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
 
 - **BlackLitterman** (Incoming)
-  Combines implied market equilibrium returns with subjective strategy views to derive blended portfolio weights.
+   Combines implied market equilibrium returns with subjective strategy views to derive blended portfolio weights.
 
 - **HRP** (Incoming)   
-  Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
+   Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
 
 ---
 
