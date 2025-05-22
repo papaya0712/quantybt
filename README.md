@@ -42,7 +42,7 @@
 - **CorrelationAnalyzer**  
    Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
 
-- **BlackLitterman** (Incoming)
+- **Black-Litterman** (Incoming)
    Combines implied market equilibrium returns with subjective strategy views to derive blended portfolio weights.
 
 - **HRP** (Incoming)   
