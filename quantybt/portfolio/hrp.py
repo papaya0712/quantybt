@@ -5,6 +5,6 @@ import scipy as cp
 import matplotlib.pyplot as plt
 from base import BaseModel
 
-# Hierarchical Risk Parity # 
+# Hierarchical Risk Parity incoming # 
 
 
