@@ -83,6 +83,14 @@ class Analyzer:
             portfolio_kwargs['sl_stop'] = self.sl_stop
 
         self.pf = vbt.Portfolio.from_signals(**portfolio_kwargs)
+    
+
+    def _map_bars_to_time(self, trades_df: pd.DataFrame, datetime_index: pd.DatetimeIndex) -> pd.DataFrame:
+     trades_df = trades_df.copy()
+     trades_df['entry_datetime'] = datetime_index[trades_df['Entry Timestamp'].values]
+     trades_df['exit_datetime'] = datetime_index[trades_df['Exit Timestamp'].values]
+     return trades_df
+
 
     def _validate_signals(self):
         if self.trade_side == 'shortonly':
@@ -102,7 +110,7 @@ class Analyzer:
             raise ValueError("No short entry signals generated")
         if self.trade_side != 'shortonly' and not self.signals['entries'].any():
             raise ValueError("No entry signals generated")
-
+    
     def oos_test(self) -> Optional[vbt.Portfolio]:
         if self.test_df is None or self.test_df.empty:
             return None
@@ -150,30 +158,15 @@ class Analyzer:
         return _PlotBacktest(self).plot_backtest(title=title)
     
     def export_trades(self, file_name: Optional[str] = 'strategy_report', save_dir: str = r"path"):
-        """
-        returns .csv with all trade information, columns:
-        - Exit Trade Id	
-        - Column	
-        - Size	
-        - Entry Timestamp	
-        - Avg Entry Price	
-        - Entry Fees	
-        - Exit Timestamp 	
-        - Avg Exit Price	
-        - Exit Fees	
-        - PnL	
-        - Return	
-        - Direction	
-        - Status	
-        - Position Id
+     """
+     Exports trades to CSV, needed for portfolio optimization later
+     """
+     trades = self.pf.trades.records_readable.copy()
+     trades = self._map_bars_to_time(trades, self.train_df.index)
 
-        entry & exit timestamp column are not in datetime format, its candle index
-        """
-        trades = self.pf.trades.records_readable.copy()
-        os.makedirs(save_dir, exist_ok=True)
-        file_path = os.path.join(save_dir, f"{file_name}.csv")
-        trades.to_csv(file_path, index=False)
-        print(f"Trades successfully exported to: {file_path}")
-
+     os.makedirs(save_dir, exist_ok=True)
+     file_path = os.path.join(save_dir, f"{file_name}.csv")
+     trades.to_csv(file_path, index=False)
+     print(f"Trades successfully exported to: {file_path}")
 
 #
