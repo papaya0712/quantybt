@@ -42,11 +42,10 @@
 - **CorrelationAnalyzer**  
   Calculates Pearson, Spearman, and active-day correlations. Includes rolling visualization.
 
-- **BlackLitterman** (incoming)
-
+- **BlackLitterman** (Incoming)
   Combines implied market equilibrium returns with subjective strategy views to derive blended portfolio weights.
 
-- **HRP** (incoming)  
+- **HRP** (Incoming)   
   Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
 
 ---
