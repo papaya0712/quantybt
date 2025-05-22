@@ -73,12 +73,20 @@ Relying on a single train-test split where you optimize your hyperparameters on 
 
 A more robust approach is **Walkforward Optimization**, where you use a rolling (or anchored) train/test window. This generates multiple smaller train-test splits across the entire dataset, providing a more reliable estimate of generalization performance and robustness.
 
-One step further is using a **Genralization loss function** which acts as penalty for massive underperfromance on unseend data and prevents even more overfitting. There are many different ways to define your GL-function. One for example:
+One step further is using a **Generalization loss function** which acts as penalty for massive underperfromance on unseend data and prevents even more overfitting. There are many different ways to define your GL-function. One for example:
 
 $$
 \text{Loss} = -\overline{\text{ValMetric}} + \beta \cdot \frac{\max(\text{GL})}{\text{scale}}
 $$
 
-> **Note:** This formula would penalizes even when OOS > Benchmark but OOS < IS.
+> **Note:** This formula would penalizes even when OOS > OOS_Benchmark < IS.
 
 This penalizes sharp degradation between in-sample and out-of-sample performance, especially when it’s unstable over recent evaluations.
+
+
+
+
+
+---
+
+### References
