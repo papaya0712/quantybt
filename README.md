@@ -173,7 +173,8 @@ Worst Trade [%]                                       -5.82
 Avg Winning Trade [%]                                  5.38       
 Avg Losing Trade [%]                                  -1.47       
 Avg Winning Trade Duration        3 days 12:48:30.483870967       
-Avg Losing Trade Duration         1 days 08:28:53.497536945       
+Avg Losing Trade Duration         1 days 08:28:53.497536945
+       
 ```
 ![Backtest Plot](img/backtest_plt.png)
 
