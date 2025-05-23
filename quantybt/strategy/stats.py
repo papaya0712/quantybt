@@ -152,7 +152,7 @@ class Stats:
 
         dd_strat, dd_bench, vola_strat, vola_bench = self._risk_metrics(timeframe, pf)
         sharpe, sortino, calmar, sharpe_b, sortino_b, calmar_b = self._risk_adjusted_metrics(timeframe, pf)
-        corr                                        = self._correlation_to_benchmark(pf)
+        corr = self._correlation_to_benchmark(pf)
         
         stats = pf.stats()
         g = stats.get 

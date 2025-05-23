@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict
 from quantybt.portfolio.base import BaseModel
-from quantybt.portfolio.statistics import neg_log_lik_clayton, neg_log_lik_gumbel
+from quantybt.portfolio.functions import neg_log_lik_clayton, neg_log_lik_gumbel
 from statsmodels.tsa.stattools import adfuller, kpss
 from statsmodels.tools.sm_exceptions import InterpolationWarning
 from scipy.optimize import minimize
@@ -13,7 +13,6 @@ import warnings
 warnings.filterwarnings("ignore", category=InterpolationWarning)
 
 class SimpleCorrelationAnalyzer(BaseModel):
-    """Correlation Analyzer designed for 2 strategys. Multi Correlation Analyzer planned"""
     def __init__(self, trade_sources: Dict[str, Dict[str, str]]):
         super().__init__()
         self.trade_sources = trade_sources
@@ -21,15 +20,13 @@ class SimpleCorrelationAnalyzer(BaseModel):
         self.results = {}
         self.combined = None
     
-
     def _is_stationary(self, returns):
         eps = 1e-6
         series = returns.dropna()
         adf_stat, adf_p, _, _, _, _ = adfuller(series, regression='c', autolag='AIC')
         kpss_stat, kpss_p, _, _ = kpss(series, regression='c', nlags='auto')
         return (adf_p < 0.05) and (kpss_p > 0.05)
-    
-                                                               
+                                                            
     def run(self, rolling_window: int = 180,test_stationary: bool = True) -> Dict[str, float]:
         a_data = self.mapped_trades['strategy_A']
         b_data = self.mapped_trades['strategy_B']
@@ -94,12 +91,7 @@ class SimpleCorrelationAnalyzer(BaseModel):
         }
 
         # Ausgabe
-        print(f"Pearson Correlation: {corr_pearson:.4f}")
-        print(f"Correlation only on active days: {corr_active:.4f}")
-        print(f"Spearman Correlation: {corr_spearman:.4f}")
-        print(f"Kendall-Tau Correlation: {corr_kendall:.4f}")
-        print(f"Clayton Copula (lower tail): {theta_clayton:.4f}, λₗ={lambda_lower:.4f}")
-        print(f"Gumbel Copula (upper tail): {theta_gumbel:.4f}, λᵤ={lambda_upper:.4f}")
+        
 
         return self.results
     
@@ -133,5 +125,6 @@ class SimpleCorrelationAnalyzer(BaseModel):
         ax3.grid(True)
         plt.tight_layout()
         plt.show()
-# 
+
+#
 
