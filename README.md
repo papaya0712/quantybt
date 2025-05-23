@@ -156,13 +156,13 @@ Sharpe Ratio                                           1.88      1.01
 Sortino Ratio                                           2.7      1.43
 Calmar Ratio                                           3.95       
 Profit Factor                                          1.99       
-Correlation to Benchmark                               0.51       
+Correlation to Benchmark                               0.51
+--------------------------------           
 Alpha [%]                                             64.79       
 Beta                                                   0.26       
 Kelly [%]                                             20.96       
-RoR100, risk=kelly                                      0.0       
-RoR50,  risk=kelly                                     0.01       
---------------------------------                                     
+Risk of Ruin_100, risk=kelly                            0.0       
+Risk of Ruin_50,  risk=kelly                           0.01                                        
 Total Trades                                            328       
 Win Rate [%]                                          37.92       
 Best Trade [%]                                        31.94       

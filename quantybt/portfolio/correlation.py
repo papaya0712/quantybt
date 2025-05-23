@@ -13,6 +13,7 @@ import warnings
 warnings.filterwarnings("ignore", category=InterpolationWarning)
 
 class SimpleCorrelationAnalyzer(BaseModel):
+    """Correlation Analyzer designed for 2 strategys. Multi Correlation Analyzer planned"""
     def __init__(self, trade_sources: Dict[str, Dict[str, str]]):
         super().__init__()
         self.trade_sources = trade_sources
@@ -97,8 +98,8 @@ class SimpleCorrelationAnalyzer(BaseModel):
         print(f"Correlation only on active days: {corr_active:.4f}")
         print(f"Spearman Correlation: {corr_spearman:.4f}")
         print(f"Kendall-Tau Correlation: {corr_kendall:.4f}")
-        print(f"Clayton θ (lower tail): {theta_clayton:.4f}, λₗ={lambda_lower:.4f}")
-        print(f"Gumbel θ (upper tail): {theta_gumbel:.4f}, λᵤ={lambda_upper:.4f}")
+        print(f"Clayton Copula (lower tail): {theta_clayton:.4f}, λₗ={lambda_lower:.4f}")
+        print(f"Gumbel Copula (upper tail): {theta_gumbel:.4f}, λᵤ={lambda_upper:.4f}")
 
         return self.results
     
