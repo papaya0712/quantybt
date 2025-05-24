@@ -43,8 +43,7 @@
    Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. Computes CVaR on global and rolling basis
 
 - **Hierarchical Risk Parity**   
-   allocation algorithm that Clusters strategies based on statistical distance and recursively allocates risk to reduce overexposure to correlated groups.
-
+   allocation algorithm that clusters strategies based on statistical distance and recursively allocates risk to reduce overexposure to correlated groups.
 
 - **Portfolio Optimizer (Planned)**     
   usefull/needed with growing portfolio. will be Bayesian Portfolio Optimization probably 
