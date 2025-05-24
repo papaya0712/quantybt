@@ -32,7 +32,7 @@ def neg_log_lik_gumbel(theta, u, v):
         return np.inf
     return -np.sum(gumbel_logpdf(theta, u, v))
 
-# ---------------------------------------------------------------- # metrics
+# ---------------------------------------------------------------- # standard metrics
 PERIODS_PER_YEAR = {
     '1m': 525_600, '5m': 105_120, '15m': 35_040, '30m': 17_520,
     '1h':   8_760, '2h':   4_380, '4h':    2_190,
@@ -98,6 +98,21 @@ def sortino_adjusted(returns, freq: str = "1d", target: float = 0.0) -> float:
     ann_exc  = excess.mean() * p
     return ann_exc / ann_down if ann_down else np.nan
 
+def global_CVaR(returns, alpha: float) -> float:
+    losses = -returns
+    var_lvl = np.percentile(losses, 100 * alpha)
+    tail_loss = losses[losses >= var_lvl]
+    return tail_loss.mean() if tail_loss.size >  0 else np.nan
+
+def rolling_CVaR(returns, alpha: float, window: int = 365) -> float:
+    def _cvar(x):
+        losses = -x
+        var_level = np.percentile(losses, 100 * alpha)
+        tail_losses = losses[losses >= var_level]
+        return tail_losses.mean() if tail_losses.size > 0 else np.nan
+    
+    return returns.rolling(window).apply(_cvar, raw=False)
 
 # ---------------------------------------------------------------- #
+
 

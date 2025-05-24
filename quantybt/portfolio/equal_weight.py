@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
+
 from typing import Dict
 
-from quantybt.portfolio.functions import max_drawdown, sharpe, sortino_adjusted, sortino, calmar
+from quantybt.portfolio.functions import *
 from quantybt.portfolio.base import BaseModel
 
 class EqualWeightPortfolio(BaseModel):
@@ -24,9 +25,6 @@ class EqualWeightPortfolio(BaseModel):
      weights   = np.repeat(1/df.shape[1], df.shape[1])
      port_ret  = df.dot(weights)
      port_eq   = (1 + port_ret).cumprod()
-     self.portfolio = pd.DataFrame({
-        'DailyReturn': port_ret,
-        'Equity':      port_eq})
      
 
      sr      = sharpe(port_ret, freq=freq, rf=rf)
@@ -35,40 +33,74 @@ class EqualWeightPortfolio(BaseModel):
      cm      = calmar(port_ret, port_eq, freq=freq)
      dd      = max_drawdown(port_eq)
 
-     self.results = pd.DataFrame([{
-        'total_return_portfolio':    (port_eq.iloc[-1] - 1) * 100,
-        'max_drawdown_portfolio':     dd * 100,
-        'sharpe_portfolio':           sr,
-        'sortino_portfolio':          st,
-        'sortino_portfolio_adj':      st_adj,
-        'calmar_portfolio':           cm}]
-        ).round(3)
+     global_cvar_99 = global_CVaR(returns=port_ret, alpha=0.99)
+     global_cvar_95 = global_CVaR(returns=port_ret, alpha=0.95)
+     global_cvar_50 = global_CVaR(returns=port_ret, alpha=0.50)
+
+     rolling_cvar_99 = rolling_CVaR(returns=port_ret, alpha=0.99, window=365)
+     rolling_cvar_95 = rolling_CVaR(returns=port_ret, alpha=0.95, window=365)
+     rolling_cvar_50 = rolling_CVaR(returns=port_ret, alpha=0.50, window=365)
+
+     self.results = pd.DataFrame({
+      'total_return_pct':      [(port_eq.iloc[-1] - 1) * 100],
+      'max_drawdown_pct':      [dd * 100],
+      'sharpe':              [sr],
+      'sortino':             [st],
+      'sortino_adj':         [st_adj],
+      'calmar':              [cm],
+      'CVaR_99_pct':             [global_cvar_99 * 100],
+      'CVaR_95_pct':             [global_cvar_95 * 100],
+      'CVaR_50_pct':             [global_cvar_50 * 100],
+      })
+     
+     self.portfolio = pd.DataFrame({
+        'return': port_ret,
+        'equity':      port_eq,
+        'rolling_cvar_99': rolling_cvar_99,
+        'rolling_cvar_95': rolling_cvar_95,
+        'rolling_cvar_50': rolling_cvar_50,
+        
+        })
+     
 
      return self.results
 
     def plot(self):
+     import matplotlib.pyplot as plt
+   
+
      if self.portfolio is None:
         raise ValueError("No portfolio data. Use .run() first")
-
-     import matplotlib.pyplot as plt
-
+     
      df = self.portfolio
-     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 10), sharex=True)
 
-     ax1.plot(df.index, df['Equity'], label='Portfolio Equity (1/n weighted)', linewidth=2)
+     ax1.plot(df.index, df['equity'], label='Portfolio Equity (1/n weighted)', linewidth=2)
      ax1.set_title('Equal-Weight Portfolio Equity Curve (Daily Aggregated)')
      ax1.legend()
      ax1.grid(True)
 
      for name, strategy_df in self.mapped_trades.items():
-        ax1.plot(strategy_df.index, strategy_df['Equity'], label=f"{name}", alpha=0.5)
+        ax1.plot(strategy_df.index, strategy_df['Equity'], label=f"{name}", alpha=0.3)
 
-     ax2.plot(df.index, df['DailyReturn'], label='Portfolio Daily Return')
+     ax2.plot(df.index, df['return'] * 100, label='Portfolio Daily Return')
      ax2.set_title('Equal-Weight Portfolio Daily Returns')
+     ax2.set_ylabel('Return %')
      ax2.legend()
      ax2.grid(True)
+     
+
+     ax3.plot(df.index, df['rolling_cvar_99'] * 100, label = 'Rolling CVaR_99%')
+     ax3.plot(df.index, df['rolling_cvar_95'] * 100, label = 'Rolling CVaR_95%')
+     ax3.plot(df.index, df['rolling_cvar_50'] * 100, label = 'Rolling CVaR_50%')
+     ax3.set_title('Rolling CVaR values, window = 365d')
+     ax3.set_ylabel("%")
+     ax3.legend()
+     ax3.grid(True)
+     
 
      plt.tight_layout()
-     plt.show()
+     plt.show() 
+
 
 #
