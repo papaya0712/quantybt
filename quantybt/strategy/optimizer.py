@@ -43,10 +43,15 @@ class _WFOSplitCfg:
 
 #
 class AdvancedOptimizer:
-    """advanced optimizer using walkforward optimization with anchored or rolling mode
-    max_evals = tested parameter combinations, note that the TPE-sampler needs less trials tahn regular grid or random search
-    beta = penalty factor for getting a good tradeoff between robustness and performance 
-    
+    """
+    Advanced optimizer using walkforward optimization with anchored or rolling mode
+    - max_evals = tested parameter combinations, note that the TPE-sampler needs less trials tahn regular grid or random search
+    - beta = penalty factor for getting a good tradeoff between robustness and performance
+
+    Note: 
+    - warm-up for features will be ignored for saving more of the timeseries for backtesting. this may result in minimal differences. 
+    - ensure your used features are only calculated on historical data and not a global computet z-score for example
+    - shifting your signals or features is recommended for maximum safety and realistic results    
     """
     def __init__(
         self,

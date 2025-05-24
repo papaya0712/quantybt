@@ -36,13 +36,13 @@
 
 ### 🔸 Portfolio Modules
 
-- **EqualWeightPortfolio**  
-   Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 3-5 strategies 
-
 - **CorrelationAnalyzer**  
    Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations for better risk-management
 
-- **HRP** (Incoming)   
+- **EqualWeightPortfolio**  
+   Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. Computes CVaR on global and rolling basis
+
+- **HRP** (planned when enough strategys for testing)   
    Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
 
 ---
