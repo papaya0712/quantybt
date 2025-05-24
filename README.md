@@ -42,9 +42,12 @@
 - **EqualWeightPortfolio**  
    Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. Computes CVaR on global and rolling basis
 
-- **HRP** (planned when enough strategys for testing)   
-   Hierarchical Risk Parity optimizer based on recursively sorted clustering of strategy returns.
+- **Hierarchical Risk Parity**   
+   allocation algorithm that Clusters strategies based on statistical distance and recursively allocates risk to reduce overexposure to correlated groups.
 
+
+- **Portfolio Optimizer (Planned)**     
+  usefull/needed with growing portfolio. will be Bayesian Portfolio Optimization probably 
 ---
 
 ## Install

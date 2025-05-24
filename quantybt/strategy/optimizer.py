@@ -49,8 +49,9 @@ class AdvancedOptimizer:
     - beta = penalty factor for getting a good tradeoff between robustness and performance
 
     Note: 
+    - via "from quantybt.strategy.optimizer import _WFOSplitCfg()" you can import the Split configuration
     - warm-up for features will be ignored for saving more of the timeseries for backtesting. this may result in minimal differences. 
-    - ensure your used features are only calculated on historical data and not a global computet z-score for example
+    - ensure your used features are only calculated on historical data and not a global computed z-score for example
     - shifting your signals or features is recommended for maximum safety and realistic results    
     """
     def __init__(
