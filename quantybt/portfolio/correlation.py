@@ -13,6 +13,13 @@ import warnings
 warnings.filterwarnings("ignore", category=InterpolationWarning)
 
 class SimpleCorrelationAnalyzer(BaseModel):
+    """
+    Correlation Analyzer build for 2 strategys
+
+    Parameter:
+    - rolling_window: defines the lookback window for the rolling correlation
+    """
+
     def __init__(self, trade_sources: Dict[str, Dict[str, str]]):
         super().__init__()
         self.trade_sources = trade_sources

@@ -165,19 +165,8 @@ class Bootstrapping:
         df_sim = df.drop(index='Original')
 
         summary = df_sim.describe().drop(index=['count', 'mean'])
-        print("=== Monte Carlo Simulation Summary ===")
-        print(summary)
-
-        print("\n=== Empirical P-Value Tests (Simulated vs Original) ===")
-        for metric in ['CumulativeReturn', 'Sharpe', 'Sortino', 'Calmar', 'MaxDrawdown']:
-            sim_values = df_sim[metric].dropna().values
-            orig_value = df.loc['Original', metric]
-
-            rank = np.sum(sim_values <= orig_value)
-            p_left = (rank + 1) / (len(sim_values) + 1)
-            p_right = 1 - p_left
-            p_val = 2 * min(p_left, p_right)
-            print(f"{metric:>18}: p-value = {p_val:.5f} | original = {orig_value:.4f} | sim_mean = {sim_values.mean():.4f}")
+        #print("=== Monte Carlo Simulation Summary ===")
+        #print(summary)
 
         if self.pf is not None and hasattr(self.pf, 'benchmark_returns'):
             bench_ret = self._frequency(self.pf.benchmark_returns())

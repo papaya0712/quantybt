@@ -2,13 +2,16 @@ import pandas as pd
 import numpy as np
 
 from typing import Dict
-
 from quantybt.portfolio.functions import *
 from quantybt.portfolio.base import BaseModel
 
 class EqualWeightPortfolio(BaseModel):
     """
-    Simulates a 1/n weighted portfolio and calculates portfolio metrics 
+    Simulates a 1/n weighted portfolio and calculates portfolio metrics. 
+    Ensure that the input strategy records comming from an robust and realistic backtesting run and are not overfitted or biased
+    
+    Setting:
+    - base settings are fine, dont change the timeframe, rf = 0 is already correct for crypto
     """
     def __init__(self, trade_sources: Dict[str, Dict[str, str]], tz: str = 'UTC'):
         super().__init__()
@@ -25,8 +28,9 @@ class EqualWeightPortfolio(BaseModel):
      weights   = np.repeat(1/df.shape[1], df.shape[1])
      port_ret  = df.dot(weights)
      port_eq   = (1 + port_ret).cumprod()
-     
+     periods_per_year = annual_factor(freq, root=False)
 
+     cagr    = CAGR(port_ret, periods_per_year)
      sr      = sharpe(port_ret, freq=freq, rf=rf)
      st      = sortino(port_ret, freq=freq, target=rf)
      st_adj  = sortino_adjusted(port_ret, freq=freq, target=rf)
@@ -43,14 +47,15 @@ class EqualWeightPortfolio(BaseModel):
 
      self.results = pd.DataFrame({
       'total_return_pct':      [(port_eq.iloc[-1] - 1) * 100],
+      'CAGR %':                [cagr*100],
       'max_drawdown_pct':      [dd * 100],
-      'sharpe':              [sr],
-      'sortino':             [st],
-      'sortino_adj':         [st_adj],
-      'calmar':              [cm],
-      'CVaR_99_pct':             [global_cvar_99 * 100],
-      'CVaR_95_pct':             [global_cvar_95 * 100],
-      'CVaR_50_pct':             [global_cvar_50 * 100],
+      'sharpe':                [sr],
+      'sortino':               [st],
+      'sortino_adj':           [st_adj],
+      'calmar':                [cm],
+      'CVaR_99_pct':           [global_cvar_99 * 100],
+      'CVaR_95_pct':           [global_cvar_95 * 100],
+      'CVaR_50_pct':           [global_cvar_50 * 100],
       })
      
      self.portfolio = pd.DataFrame({
@@ -68,7 +73,6 @@ class EqualWeightPortfolio(BaseModel):
     def plot(self):
      import matplotlib.pyplot as plt
    
-
      if self.portfolio is None:
         raise ValueError("No portfolio data. Use .run() first")
      
@@ -81,7 +85,7 @@ class EqualWeightPortfolio(BaseModel):
      ax1.grid(True)
 
      for name, strategy_df in self.mapped_trades.items():
-        ax1.plot(strategy_df.index, strategy_df['Equity'], label=f"{name}", alpha=0.3)
+        ax1.plot(strategy_df.index, strategy_df['Equity'], label=f"{name}", alpha=0.5)
 
      ax2.plot(df.index, df['return'] * 100, label='Portfolio Daily Return')
      ax2.set_title('Equal-Weight Portfolio Daily Returns')
@@ -89,7 +93,6 @@ class EqualWeightPortfolio(BaseModel):
      ax2.legend()
      ax2.grid(True)
      
-
      ax3.plot(df.index, df['rolling_cvar_99'] * 100, label = 'Rolling CVaR_99%')
      ax3.plot(df.index, df['rolling_cvar_95'] * 100, label = 'Rolling CVaR_95%')
      ax3.plot(df.index, df['rolling_cvar_50'] * 100, label = 'Rolling CVaR_50%')
@@ -101,6 +104,5 @@ class EqualWeightPortfolio(BaseModel):
 
      plt.tight_layout()
      plt.show() 
-
 
 #
