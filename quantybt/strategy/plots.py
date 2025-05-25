@@ -110,34 +110,25 @@ class _PlotWFOSummary:
     def __init__(self, optimizer):
         self.optimizer = optimizer
         self.analyzer = optimizer.analyzer
-        self.init_cash = self.analyzer.init_cash
+        self.init_cash = 1000.0  
+        self.oos_pfs = self.optimizer.oos_pfs
+        self._df = self.analyzer.train_df
 
-        if not getattr(self.optimizer, 'oos_pfs', None):
+        if not self.oos_pfs:
             raise RuntimeError("Call AdvancedOptimizer.evaluate() before plotting WFO summary.")
 
-        self.oos_pfs = self.optimizer.oos_pfs
-        self._df     = self.analyzer.train_df
-        self._prepare_equities()
+        self.benchmark = self._build_benchmark()
 
-    def _prepare_equities(self):
-        last_value = self.init_cash
-        self.equities  = []
-        self.timestamps = []
+    def _build_benchmark(self) -> pd.Series:
+        close = self._df['close']
+        bench = (close / close.iloc[0]) * self.init_cash
+        return bench
 
-        for pf in self.oos_pfs:
-            pf_eq = pf.value()
-            eq    = pf_eq / pf_eq.iloc[0] * last_value
-            last_value = eq.iloc[-1]
+    def plot(self, title="Walk-Forward OOS Folds") -> go.Figure:
+        from plotly.colors import qualitative
+        colors = qualitative.Plotly
 
-            ts = pd.Series(pf_eq.index, index=pf_eq.index)
-            if 'timestamp' in self._df.columns:
-                ts = self._df['timestamp'].reindex(pf_eq.index).ffill()
-
-            self.equities.append(eq)
-            self.timestamps.append(ts)
-
-    def plot(self, title="Walk-Forward OOS Folds (Individual Plots)") -> go.Figure:
-        num_folds = len(self.equities)
+        num_folds = len(self.oos_pfs)
         fig = make_subplots(
             rows=num_folds, cols=1,
             shared_xaxes=False,
@@ -145,29 +136,52 @@ class _PlotWFOSummary:
             subplot_titles=[f"Fold {i+1}" for i in range(num_folds)]
         )
 
-        for i, (eq, ts) in enumerate(zip(self.equities, self.timestamps), start=1):
+        for i, (pf, (train_df, test_df)) in enumerate(zip(self.oos_pfs, self.optimizer._splits), start=1):
+            pf_eq = pf.value()
+            eq_norm = pf_eq / pf_eq.iloc[0] * self.init_cash
+            start, end = pf_eq.index[0], pf_eq.index[-1]
+
+            bench_seg = self.benchmark.loc[start:end]
+            if bench_seg.empty:
+                continue
+            bench_norm = bench_seg / bench_seg.iloc[0] * self.init_cash
+
             fig.add_trace(
-                go.Scatter(x=ts, y=eq.values, mode="lines",
-                           name=f"Fold {i}",
-                           hovertemplate=f"Fold {i}<br>%{{x}}<br>Equity: %{{y:.2f}}"),
+                go.Scatter(
+                    x=eq_norm.index,
+                    y=eq_norm.values,
+                    mode="lines",
+                    name=f"Fold {i} Strategy",
+                    line=dict(color=colors[0]),  
+                    hovertemplate=f"Fold {i}<br>%{{x}}<br>Equity: %{{y:.2f}}"
+                ),
                 row=i, col=1
             )
-            fig.update_xaxes(
-                range=[ts.min(), ts.max()],
-                type="date",
+
+            fig.add_trace(
+                go.Scatter(
+                    x=bench_norm.index,
+                    y=bench_norm.values,
+                    mode="lines",
+                    name=f"Fold {i} Benchmark",
+                    line=dict(color=colors[1]),  
+                    hovertemplate=f"Benchmark<br>%{{x}}<br>Equity: %{{y:.2f}}"
+                ),
                 row=i, col=1
             )
+
+            fig.update_xaxes(range=[start, end], type="date", row=i, col=1)
 
         fig.update_layout(
             title=title,
             template="plotly_dark",
             height=300 * num_folds,
             width=1100,
-            hovermode="closest",
+            hovermode="x unified",
             showlegend=False
         )
         return fig
-    
+
 # ============================== Montecarlo Bootstrapping Plot ============================== # 
 if TYPE_CHECKING:
     from .montecarlo import Bootstrapping

@@ -28,79 +28,91 @@ class SimpleCorrelationAnalyzer(BaseModel):
         self.combined = None
     
     def _is_stationary(self, returns):
-        eps = 1e-6
-        series = returns.dropna()
-        adf_stat, adf_p, _, _, _, _ = adfuller(series, regression='c', autolag='AIC')
-        kpss_stat, kpss_p, _, _ = kpss(series, regression='c', nlags='auto')
-        return (adf_p < 0.05) and (kpss_p > 0.05)
-                                                            
-    def run(self, rolling_window: int = 180,test_stationary: bool = True) -> Dict[str, float]:
-        a_data = self.mapped_trades['strategy_A']
-        b_data = self.mapped_trades['strategy_B']
+     eps = 1e-6
+     series = returns.dropna()
+     adf_stat, adf_p, _, _, _, _ = adfuller(series, regression='c', autolag='AIC')
+     kpss_stat, kpss_p, _, _ = kpss(series, regression='c', nlags='auto')
+     return {
+        "stationary": (adf_p < 0.05) and (kpss_p > 0.05),
+        "adf_stat": adf_stat,
+        "adf_p": adf_p,
+        "kpss_stat": kpss_stat,
+        "kpss_p": kpss_p}   
 
-        combined = pd.concat([a_data['DailyReturn'], b_data['DailyReturn']], axis=1, keys=['A', 'B']).fillna(0)
-        self.combined = combined
+    def run(self, rolling_window: int = 180, test_stationary: bool = True) -> Dict[str, float]:
+     a_data = self.mapped_trades['strategy_A']
+     b_data = self.mapped_trades['strategy_B']
 
-        if test_stationary:
-            warnings.filterwarnings("ignore", message=".*InterpolationWarning.*")
-            a_stat = self._is_stationary(combined['A'])
-            b_stat = self._is_stationary(combined['B'])
-            if a_stat and b_stat:
-                print("Stationarity check: both Strategy A and B are stationary.")
-            else:
-                if not a_stat:
-                    print("WARNING: Strategy A returns may not be stationary.")
-                if not b_stat:
-                    print("WARNING: Strategy B returns may not be stationary.")
+     combined = pd.concat([a_data['DailyReturn'], b_data['DailyReturn']], axis=1, keys=['A', 'B']).fillna(0)
+     self.combined = combined
 
-        corr_pearson = combined['A'].corr(combined['B'])
-        corr_spearman = combined['A'].corr(combined['B'], method='spearman')
-        corr_kendall = combined['A'].corr(combined['B'], method='kendall')
+     if test_stationary:
+        warnings.filterwarnings("ignore", message=".*InterpolationWarning.*")
+        a_stat = self._is_stationary(combined['A'])
+        b_stat = self._is_stationary(combined['B'])
 
-        active_days = combined[(combined['A'] != 0) & (combined['B'] != 0)]
-        corr_active = active_days['A'].corr(active_days['B'])
+        if not a_stat['stationary']:
+            print("\nStationarity Check for Strategy A (Not Stationary):")
+            print(f"  ADF Statistic: {a_stat['adf_stat']:.4f} | p-value: {a_stat['adf_p']:.4f}")
+            print(f"  KPSS Statistic: {a_stat['kpss_stat']:.4f} | p-value: {a_stat['kpss_p']:.4f}")
+            print("  Stationary: No")
 
+        if not b_stat['stationary']:
+            print("\nStationarity Check for Strategy B (Not Stationary):")
+            print(f"  ADF Statistic: {b_stat['adf_stat']:.4f} | p-value: {b_stat['adf_p']:.4f}")
+            print(f"  KPSS Statistic: {b_stat['kpss_stat']:.4f} | p-value: {b_stat['kpss_p']:.4f}")
+            print("  Stationary: No")
 
+        if a_stat['stationary'] and b_stat['stationary']:
+            print("\nStationarity check: both Strategy A and B are stationary.")
+        else:
+            if not a_stat['stationary']:
+                print("WARNING: Strategy A returns may not be stationary.")
+            if not b_stat['stationary']:
+                print("WARNING: Strategy B returns may not be stationary.")
 
-        #
-        eps = 1e-6
-        u = np.clip(combined['A'].rank(pct=True).values, eps, 1 - eps)
-        v = np.clip(combined['B'].rank(pct=True).values, eps, 1 - eps)
+ 
+     corr_pearson = combined['A'].corr(combined['B'])
+     corr_spearman = combined['A'].corr(combined['B'], method='spearman')
+     corr_kendall = combined['A'].corr(combined['B'], method='kendall')
 
-        # Clayton 
-        res_clayton = minimize(
-            lambda t: neg_log_lik_clayton(t, u, v),
-            x0=np.array([1.0]),
-            bounds=[(1e-6, None)]
-        )
-        theta_clayton = res_clayton.x[0]
-        lambda_lower = 2 ** (-1.0 / theta_clayton)
+     active_days = combined[(combined['A'] != 0) & (combined['B'] != 0)]
+     corr_active = active_days['A'].corr(active_days['B'])
 
-        # Gumbel 
-        res_gumbel = minimize(
-            lambda t: neg_log_lik_gumbel(t, u, v),
-            x0=np.array([1.5]),
-            bounds=[(1.0, None)]
-        )
-        theta_gumbel = res_gumbel.x[0]
-        lambda_upper = 2 - 2 ** (1.0 / theta_gumbel)
+    
+     eps = 1e-6
+     u = np.clip(combined['A'].rank(pct=True).values, eps, 1 - eps)
+     v = np.clip(combined['B'].rank(pct=True).values, eps, 1 - eps)
 
-        
-        self.results = {
-            'pearson': corr_pearson,
-            'spearman': corr_spearman,
-            'kendall_tau': corr_kendall,
-            'active_days_corr': corr_active,
-            'theta_clayton': theta_clayton,
-            'lambda_lower': lambda_lower,
-            'theta_gumbel': theta_gumbel,
-            'lambda_upper': lambda_upper,
-        }
+     res_clayton = minimize(
+        lambda t: neg_log_lik_clayton(t, u, v),
+        x0=np.array([1.0]),
+        bounds=[(1e-6, None)]
+     )
+     theta_clayton = res_clayton.x[0]
+     lambda_lower = 2 ** (-1.0 / theta_clayton)
 
-        # Ausgabe
-        
+     res_gumbel = minimize(
+        lambda t: neg_log_lik_gumbel(t, u, v),
+        x0=np.array([1.5]),
+        bounds=[(1.0, None)]
+     )
+     theta_gumbel = res_gumbel.x[0]
+     lambda_upper = 2 - 2 ** (1.0 / theta_gumbel)
 
-        return self.results
+     self.results = {
+        'pearson': corr_pearson,
+        'spearman': corr_spearman,
+        'kendall_tau': corr_kendall,
+        'active_days_corr': corr_active,
+        'theta_clayton': theta_clayton,
+        'lambda_lower': lambda_lower,
+        'theta_gumbel': theta_gumbel,
+        'lambda_upper': lambda_upper,
+     }
+
+     return self.results 
+
     
     def plot(self, rolling_window: int = 180):
         if self.combined is None:

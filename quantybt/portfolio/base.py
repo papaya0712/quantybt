@@ -26,31 +26,24 @@ class BaseModel:
             trades_df = self._map_bars_to_time(trades_df, market_df)
             return_df = self._aggregate_returns(trades_df, tz=tz)
             mapped[name] = return_df
-
         return mapped
 
     def _map_bars_to_time(self, trades_df: pd.DataFrame, market_df: pd.DataFrame) -> pd.DataFrame:
-        trades_df = trades_df.copy()
-        if 'timestamp' in market_df.columns:
-            market_df = market_df.set_index('timestamp')
+     trades_df = trades_df.copy()
 
-        datetime_index = pd.DatetimeIndex(pd.to_datetime(market_df.index))
-        entry_idx = trades_df['Entry Timestamp'].astype(int)
-        exit_idx = trades_df['Exit Timestamp'].astype(int)
+     trades_df['Entry Timestamp'] = pd.to_datetime(trades_df['Entry Timestamp'])
+     trades_df['Exit Timestamp'] = pd.to_datetime(trades_df['Exit Timestamp'])
 
-        max_idx = max(entry_idx.max(), exit_idx.max())
-        if max_idx >= len(datetime_index):
-            raise IndexError(
-                f"Invalid bar index in trade data: max index {max_idx} exceeds market data length {len(datetime_index)}"
-            )
+     if 'timestamp' in market_df.columns:
+        market_df['timestamp'] = pd.to_datetime(market_df['timestamp'])
+        market_df = market_df.set_index('timestamp')
 
-        trades_df['entry_dt'] = datetime_index[entry_idx.values]
-        trades_df['exit_dt'] = datetime_index[exit_idx.values]
+     trades_df['entry_dt'] = trades_df['Entry Timestamp']
+     trades_df['exit_dt'] = trades_df['Exit Timestamp']
 
-        return trades_df
+     return trades_df
 
     def _aggregate_returns(self, trades_df: pd.DataFrame, tz='UTC') -> pd.DataFrame:
-    
         df = trades_df.copy()
         df['exit_dt'] = pd.to_datetime(df['exit_dt'], utc=True)
         df = df.set_index('exit_dt')
@@ -64,4 +57,5 @@ class BaseModel:
             'DailyReturn': daily_returns,
             'Equity': equity_curve
         })
+
 ####

@@ -11,7 +11,9 @@ import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class Analyzer:
-    def __init__(self,strategy: Strategy,
+    def __init__(
+        self,
+        strategy: Strategy,
         params: Dict[str, Any],
         full_data: pd.DataFrame,
         timeframe: str,
@@ -35,10 +37,23 @@ class Analyzer:
         self.tp_stop = tp_stop
         self.sl_stop = sl_stop
         self.trade_side = trade_side
+
         self.full_data = self.util.validate_data(full_data)
+        self.full_data['timestamp'] = pd.to_datetime(self.full_data['timestamp'])
+        self.full_data = (
+            self.full_data
+            .set_index('timestamp', drop=True) 
+            .sort_index()
+            )
+        
+        # ----------------------------
 
         if not isinstance(self.full_data.index, pd.DatetimeIndex):
-            warnings.warn("Data index is not datetime-based. Time-based features may not work as expected.", stacklevel=2)
+            warnings.warn(
+                "Data index is not datetime-based. "
+                "Time-based features may not work as expected.",
+                stacklevel=2
+            )
 
         if test_size > 0:
             self.train_df, self.test_df = self.util.time_based_split(self.full_data, test_size)
