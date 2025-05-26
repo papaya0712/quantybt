@@ -124,6 +124,31 @@ def rolling_CVaR(returns, alpha: float, window: int = 365) -> float:
     
     return returns.rolling(window).apply(_cvar, raw=False)
 
+class EmpiricalCVaR:
+    def __init__(self, returns: pd.Series, n_sims: int = 10000, random_seed: int = 42):
+        self.returns = returns.dropna().values
+        self.n_sims = n_sims
+        self.random_seed = random_seed
+        self.simulated_returns = []
+
+    def run(self):
+        np.random.seed(self.random_seed)
+        n = len(self.returns)
+
+        self.simulated_returns = [
+            np.random.choice(self.returns, size=n, replace=True)
+            for _ in range(self.n_sims)
+        ]
+        return self.simulated_returns
+
+    def to_cvar_list(self, alpha=0.05, cvar_func=None):
+        if not self.simulated_returns:
+            self.run()
+        if cvar_func is None:
+            cvar_func = global_CVaR  
+
+        return [cvar_func(pd.Series(sim), alpha=alpha) for sim in self.simulated_returns]
+
 # ---------------------------------------------------------------- #
 
 

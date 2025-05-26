@@ -37,16 +37,14 @@
 ### 🔸 Portfolio Modules
 
 - **CorrelationAnalyzer**  
-   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations for better risk-management
+   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations for better risk-management 
 
 - **EqualWeightPortfolio**  
-   Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. Computes CVaR on global and rolling basis
+   Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. Computes **CVaR** on global, rolling and empirical (via Bootstrapping) basis 
 
-- **Hierarchical Risk Parity**   
+- **Hierarchical Risk Parity (Planned)**   
    allocation algorithm that clusters strategies based on statistical distance and recursively allocates risk to reduce overexposure to correlated groups
 
-- **Portfolio Optimizer (Planned)**     
-  usefull/needed with growing portfolio. will be Bayesian Portfolio Optimization probably 
 ---
 
 ## Install
