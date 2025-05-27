@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Dict
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -106,79 +106,112 @@ class _PlotBacktest:
         return rets[mask]
 
 # ============================== Walkforward plot ============================== # 
+
 class _PlotWFOSummary:
-    def __init__(self, optimizer):
+    def __init__(
+        self,
+        optimizer,
+        bootstrap_results: Optional[Dict[str, Dict[str, pd.DataFrame]]] = None
+    ):
+       
         self.optimizer = optimizer
         self.analyzer = optimizer.analyzer
-        self.init_cash = 1000.0  
-        self.oos_pfs = self.optimizer.oos_pfs
-        self._df = self.analyzer.train_df
+        self.bootstrap_results = bootstrap_results
+        self.init_cash = getattr(optimizer, 'init_cash', 1000.0)
+        self.oos_pfs = optimizer.oos_pfs
 
         if not self.oos_pfs:
-            raise RuntimeError("Call AdvancedOptimizer.evaluate() before plotting WFO summary.")
+            raise RuntimeError("Call evaluate() before plotting WFO summary.")
 
         self.benchmark = self._build_benchmark()
 
     def _build_benchmark(self) -> pd.Series:
-        close = self._df['close']
-        bench = (close / close.iloc[0]) * self.init_cash
-        return bench
+        close = self.analyzer.train_df['close']
+        return (close / close.iloc[0]) * self.init_cash
 
-    def plot(self, title="Walk-Forward OOS Folds") -> go.Figure:
+    def plot(self, title: str = "Walk-Forward OOS Folds") -> go.Figure:
         from plotly.colors import qualitative
         colors = qualitative.Plotly
-
         num_folds = len(self.oos_pfs)
+
         fig = make_subplots(
-            rows=num_folds, cols=1,
+            rows=num_folds,
+            cols=1,
             shared_xaxes=False,
             vertical_spacing=0.05,
             subplot_titles=[f"Fold {i+1}" for i in range(num_folds)]
         )
 
-        for i, (pf, (train_df, test_df)) in enumerate(zip(self.oos_pfs, self.optimizer._splits), start=1):
-            pf_eq = pf.value()
-            eq_norm = pf_eq / pf_eq.iloc[0] * self.init_cash
-            start, end = pf_eq.index[0], pf_eq.index[-1]
-
-            bench_seg = self.benchmark.loc[start:end]
-            if bench_seg.empty:
-                continue
+        for i, (pf, (train_df, test_df)) in enumerate(
+            zip(self.oos_pfs, self.optimizer._splits), start=1
+        ):
+         
+            eq = pf.value()
+            eq_norm = eq / eq.iloc[0] * self.init_cash
+            bench_seg = self.benchmark.reindex(eq_norm.index, method='ffill')
             bench_norm = bench_seg / bench_seg.iloc[0] * self.init_cash
 
+    
             fig.add_trace(
                 go.Scatter(
                     x=eq_norm.index,
                     y=eq_norm.values,
                     mode="lines",
                     name=f"Fold {i} Strategy",
-                    line=dict(color=colors[0]),  
+                    line=dict(color=colors[0]),
                     hovertemplate=f"Fold {i}<br>%{{x}}<br>Equity: %{{y:.2f}}"
-                ),
-                row=i, col=1
-            )
-
+                ), row=i, col=1)
+            
             fig.add_trace(
                 go.Scatter(
                     x=bench_norm.index,
                     y=bench_norm.values,
                     mode="lines",
                     name=f"Fold {i} Benchmark",
-                    line=dict(color=colors[1]),  
+                    line=dict(color=colors[1]),
                     hovertemplate=f"Benchmark<br>%{{x}}<br>Equity: %{{y:.2f}}"
-                ),
-                row=i, col=1
+                ), row=i, col=1
             )
 
-            fig.update_xaxes(range=[start, end], type="date", row=i, col=1)
+            if self.bootstrap_results:
+                quant = self.bootstrap_results.get(f"Fold_{i}", {}).get("quantiles")
+                if quant is not None:
+                    quant = quant / quant.iloc[0] * self.init_cash
+                    quant = quant.reindex(eq_norm.index, method='ffill')
+
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=quant.index,
+                            y=quant['q95'],
+                            mode='lines',
+                            line=dict(width=0),
+                            showlegend=False,
+                            hoverinfo='skip'
+                        ), row=i, col=1
+                    )
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=quant.index,
+                            y=quant['q05'],
+                            mode='lines',
+                            fill='tonexty',
+                            fillcolor='rgba(200,200,200,0.2)',
+                            line=dict(width=0),
+                            name='95 % CI',
+                            hoverinfo='skip'
+                        ), row=i, col=1
+                    )
+
+            fig.update_xaxes(type='date', row=i, col=1)
 
         fig.update_layout(
             title=title,
-            template="plotly_dark",
+            template='plotly_dark',
             height=300 * num_folds,
             width=1100,
-            hovermode="x unified",
-            showlegend=False
+            hovermode='x unified'
         )
         return fig
 

@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
 import vectorbt as vbt
+import plotly.graph_objects as go
 
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, List, Union, Sequence
 from hyperopt import space_eval, STATUS_OK, tpe, fmin, Trials
 from .plots import _PlotWFOSummary
+from .montecarlo import Bootstrapping
 from .analyzer import Analyzer
 from .stats import Stats
 import logging
@@ -267,12 +269,16 @@ class AdvancedOptimizer:
         self.print_fold_periods()
         print("=== Top 5 Parameter combinations after Generalization-Loss penalty ===")
         top: List[Tuple[float, dict]] = []
+
         for trial, gl in zip(self.trials.trials, self._history_gl_max):
             flat = {k: v[0] for k, v in trial['misc']['vals'].items()}
             params = space_eval(self.strategy.param_space, flat)
             top.append((gl, params))
         for rank, (gl, params) in enumerate(sorted(top, key=lambda x: x[0])[:5], start=1):
             print(f"{rank:>2}. GL={gl:.4f} → Params={params}")
+            
+        self.is_values  = [is_m  for (is_m,  oos_m) in self.trial_metrics]
+        self.oos_values = [oos_m for (is_m,  oos_m) in self.trial_metrics]
         return self.best_params, self.trials
 
     def evaluate(self) -> dict:
@@ -328,7 +334,69 @@ class AdvancedOptimizer:
             'oos_pfs': self.oos_pfs,
             'trial_metrics': self.trial_metrics
         }
+    
+    def montecarlo_oos(self, n_sims: int = 2_000, random_seed: int = 69, batch_size: int = 500, timeframe: Optional[str] = None) -> Dict[str, pd.DataFrame]:
+     if not getattr(self, 'oos_pfs', None):
+        raise RuntimeError("use `evaluate()` first.")
 
-    def plot_walkforward_summary(self, title: str = "Walk-Forward Summary"):
-        return _PlotWFOSummary(self).plot(title=title)
+     tf = timeframe or self.analyzer.timeframe
+     results = {}
+
+     for i, pf in enumerate(self.oos_pfs, start=1):
+        ret_series = pf.returns()
+        bs = Bootstrapping(
+            analyzer=None,
+            ret_series=ret_series,
+            timeframe=tf,
+            n_sims=n_sims,
+            random_seed=random_seed,
+            batch_size=batch_size
+        )
+        mc_data = bs.mc_with_replacement()
+        
+        equity_curves: pd.DataFrame = mc_data['simulated_equity_curves']
+        stats = pd.DataFrame(mc_data['simulated_stats'])
+
+        q05 = equity_curves.quantile(0.05, axis=1)
+        q95 = equity_curves.quantile(0.95, axis=1)
+        quantiles = pd.DataFrame({'q05': q05, 'q95': q95})
+        
+        fold_key = f'Fold_{i}'
+        results[fold_key] = {
+                'equity_curves': equity_curves,
+                'stats':         stats,
+                'quantiles':     quantiles
+            }
+        
+     print("\n=== Bootstrap Summaries per OOS Fold ===")
+     for fold, fold_res in results.items():
+        summary = fold_res['stats'].describe().loc[['mean', 'std', '25%', '50%', '75%'], :]
+        print(f"\n--- {fold} ---")
+        print(summary)
+
+        
+       
+     return results
+
+    def plot_walkforward_summary(self,
+                                 bootstrap_results: Optional[Dict[str, Dict[str, pd.DataFrame]]] = None,
+                                 title: str = "Walk-Forward OOS Folds"
+                                 ) -> go.Figure:
+        """
+        Plots the Walk-Forward OOS summary. If bootstrap_results is provided,
+        95% confidence bands are included; otherwise only strategy vs. benchmark.
+
+        Args:
+            bootstrap_results: Optional dict from bootstrap_oos();
+                if None, omits confidence bands.
+            title: Title of the plot.
+        Returns:
+            Plotly Figure.
+        """
+        
+        if bootstrap_results is None and hasattr(self, 'bs_results'):
+            bootstrap_results = self.bs_results
+
+        return _PlotWFOSummary(self, bootstrap_results).plot(title=title)
+
 #
