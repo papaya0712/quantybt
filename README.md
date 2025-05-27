@@ -14,7 +14,7 @@
   Simple `vectorbt`-based backtester. Outputs full performance metrics, equity curves, drawdown charts, and summary stats with minimal config.
 
 - **AdvancedOptimizer**  
-  The most comprehensive model in the project to date — a modified Walkforward Optimizer that supports both **rolling** and **anchored** validation schemes. It integrates **Bayesian Optimization** via [Hyperopt](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search.  
+  The most comprehensive model in the project to date, a modified Walkforward Optimizer that supports both **rolling** and **anchored** validation schemes. It integrates **Bayesian Optimization** via [Hyperopt](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search.  
   Key enhancements include:  
   – A built-in **generalization loss penalty** to dynamically reduce overfitting.  
   – Integrated **Monte Carlo bootstrapping** for each out-of-sample fold to assess robustness.
