@@ -20,6 +20,13 @@ class WeightedPortfolio(BaseModel):
     Methods:
     - run: computes the equal-weight portfolio performance and metrics
     - plot: standard plots of equity, returns, and rolling CVaR
+
+    Note:
+    - due to special crypto condition in markets and exchanges there is no rebalancing cost simulation needed 
+      assuming a cross margin mode is used on your crypto-exchange
+      
+    
+
     """
     def __init__(self, trade_sources: Dict[str, Dict[str, str]], tz: str = 'UTC'):
         super().__init__()
@@ -60,19 +67,21 @@ class WeightedPortfolio(BaseModel):
         cvar_list = bs.to_cvar_list(alpha=0.05)
         empirical_cvar_95 = np.nanmean(cvar_list)
 
+        
+
         self.results = pd.DataFrame({
             'total_return_pct': [(port_eq.iloc[-1] - 1) * 100],
             'CAGR_pct': [cagr * 100],
             'max_drawdown_pct': [dd * 100],
             'Sharpe': [sr],
-            'Sortino': [st],
-            'Sortino_adj': [st_adj],
+            #'Sortino': [st],
+            'Sortino': [st_adj],
             'Calmar': [cm],
             'CVaR_99_pct': [gc99 * 100],
             'CVaR_95_pct': [gc95 * 100],
             'CVaR_50_pct': [gc50 * 100],
             'Empirical_CVaR_95_pct': [empirical_cvar_95 * 100]
-        })
+        }).round(2)
 
         self.portfolio = pd.DataFrame({
             'return': port_ret,
