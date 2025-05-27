@@ -1,9 +1,9 @@
-from .correlation import SimpleCorrelationAnalyzer
+from .correlation import CorrelationAnalyzer
 from .equal_weight import WeightedPortfolio
 from .functions import *
 
 __all__ = [
-    'SimpleCorrelationAnalyzer',
+    'CorrelationAnalyzer',
     'WeightedPortfolio',
 
     'sharpe', 'max_drawdown', 'sortino', 'sortino_adjusted', 'calmar', 'CAGR', 'annual_factor',

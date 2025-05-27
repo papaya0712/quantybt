@@ -14,10 +14,10 @@
   Simple `vectorbt`-based backtester. Outputs full performance metrics, equity curves, drawdown charts, and summary stats with minimal config.
 
 - **AdvancedOptimizer**  
-  The most comprehensive model in the project to date, a modified Walkforward Optimizer that supports both **rolling** and **anchored** validation schemes. It integrates **Bayesian Optimization** via [Hyperopt](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search.  
-  Key enhancements include:  
-  – A built-in **generalization loss penalty** to dynamically reduce overfitting.  
-  – Integrated **Monte Carlo bootstrapping** for each out-of-sample fold to assess robustness.
+  The most comprehensive model in the project to date, a modified Walkforward Optimizer that supports both **rolling** and **anchored** validation schemes. It integrates **Bayesian Optimization** via [Hyperopt](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search 
+  Key enhancements include:    
+    – A built-in **generalization loss penalty** to dynamically reduce overfitting  
+    – Integrated **Monte Carlo bootstrapping** for each out-of-sample fold to assess robustness
 
 - **Bootstrapping**  
   Monte Carlo simulation engine for risk estimation and statistical robustness.  
@@ -27,7 +27,7 @@
   Uses finite-difference-style perturbations to quickly screen for unstable or sensitive parameters.
 
 - **GlobalSensitivityAnalyzer**  
-  Performs full grid search across 2D parameter space for global insight into strategy behavior. (Morris screening already planned)
+  Performs full grid search across 2D parameter space for global insight into strategy behavior. 
 
 - **Loader**  
   Integrated crypto data loader using [CCXT](https://github.com/ccxt/ccxt).  
@@ -38,10 +38,12 @@
 ### 🔸 Portfolio Modules
 
 - **CorrelationAnalyzer**  
-   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations for better risk-management 
+   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations. 
+   Supports bivariate and multivariate analysis.
 
 - **EqualWeightPortfolio**  
-   Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. Computes **CVaR** on global, rolling and empirical (via Bootstrapping) basis 
+   Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. 
+   Computes **CVaR** on global, rolling and empirical (via Bootstrapping) basis 
 
 - **Hierarchical Risk Parity (Planned)**   
    allocation algorithm that clusters strategies based on statistical distance and recursively allocates risk to reduce overexposure to correlated groups
@@ -198,7 +200,7 @@ print(mc_results)
 ```
 ```text
 === Empirical P-Value Tests (Simulated vs Benchmark) ===
-       _______________________________________________________________________
+
             Sharpe: p-value = 0.03960 | benchmark = 1.0074 | sim_mean = 1.8808
            Sortino: p-value = 0.04080 | benchmark = 1.4347 | sim_mean = 2.7117
             Calmar: p-value = 0.03820 | benchmark = 0.7370 | sim_mean = 2.6505
