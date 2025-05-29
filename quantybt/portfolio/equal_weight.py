@@ -13,7 +13,7 @@ from .functions import EmpiricalCVaR
 
 ####
 
-class WeightedPortfolio(BaseModel):
+class EqualWeightedPortfolio(BaseModel):
     """
     Simulates a 1/n weighted portfolio and calculates portfolio metrics.
 
@@ -37,9 +37,8 @@ class WeightedPortfolio(BaseModel):
         self.portfolio: pd.DataFrame = None
 
     def run(self, freq: str = '1d', rf: float = 0.) -> pd.DataFrame:
-        df = pd.concat(
-            [df['DailyReturn'].rename(name) for name, df in self.mapped_trades.items()], axis=1
-        ).fillna(0)
+        df = pd.concat([df['DailyReturn'].rename(name) for name, df in self.mapped_trades.items()], axis=1).fillna(0)
+        
         weights = np.repeat(1 / df.shape[1], df.shape[1])
         port_ret = df.dot(weights)
         port_eq = (1 + port_ret).cumprod()
