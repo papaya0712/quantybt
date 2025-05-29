@@ -15,18 +15,16 @@ from .functions import EmpiricalCVaR
 
 class EqualWeightedPortfolio(BaseModel):
     """
-    Simulates a 1/n weighted portfolio and calculates portfolio metrics.
+    Simulates a 1/n equal weighted portfolio with daily rebalancing and calculates portfolio metrics.
 
     Methods:
     - run: computes the equal-weight portfolio performance and metrics
     - plot: standard plots of equity, returns, and rolling CVaR
 
     Note:
+    - No intra day/position tracking supported -> intraday volatility may under estimated
     - due to special crypto condition in markets and exchanges there is no rebalancing cost simulation needed 
       assuming a cross margin mode is used on your crypto-exchange
-      
-    
-
     """
     def __init__(self, trade_sources: Dict[str, Dict[str, str]], tz: str = 'UTC'):
         super().__init__()
@@ -109,3 +107,5 @@ class EqualWeightedPortfolio(BaseModel):
         ax3.plot(df.index, df['rolling_cvar_50']*100, label='CVaR 50%')
         ax3.set_title('Rolling CVaR (365-day)'); ax3.set_ylabel('%'); ax3.legend(); ax3.grid(True)
         plt.tight_layout(); plt.show()  
+
+#
