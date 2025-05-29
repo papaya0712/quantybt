@@ -57,15 +57,12 @@ class CorrelationAnalyzer(BaseModel):
         names = list(self.mapped_trades.keys())
         A, B = names[0], names[1]
 
-        # Load daily returns for each strategy
         a_df = self.mapped_trades[A]['DailyReturn'].rename(A)
         b_df = self.mapped_trades[B]['DailyReturn'].rename(B)
 
-        # Combine on inner join
         combined = pd.concat([a_df, b_df], axis=1, join='inner').dropna(how='any')
         self.combined = combined
 
-        # Stationarity tests
         if test_stationary:
             warnings.filterwarnings("ignore", message=".*InterpolationWarning.*")
             stat_a = self._is_stationary(combined[A])
@@ -75,7 +72,6 @@ class CorrelationAnalyzer(BaseModel):
             if not stat_b['stationary']:
                 print(f"{B} not stationary | ADF p={stat_b['adf_p']:.4f}, KPSS p={stat_b['kpss_p']:.4f}")
 
-        # Variant 1: ±1-day tolerance for active days
         mask_A = combined[A] != 0
         mask_B = combined[B] != 0
         mask_B_forward = mask_B.shift(1, fill_value=False)
@@ -83,7 +79,6 @@ class CorrelationAnalyzer(BaseModel):
         active_mask = mask_A & (mask_B | mask_B_forward | mask_B_backward)
         active = combined.loc[active_mask]
 
-        # Copula estimation for full sample
         eps = 1e-6
         u_full = np.clip(combined[A].rank(pct=True).values, eps, 1-eps)
         v_full = np.clip(combined[B].rank(pct=True).values, eps, 1-eps)
@@ -94,7 +89,6 @@ class CorrelationAnalyzer(BaseModel):
         theta_g_full = res_g_full.x[0]
         lambda_upper_full = 2 - 2 ** (1.0 / theta_g_full)
 
-        # Copula estimation for tolerated active days
         if not active.empty:
             u_act = np.clip(active[A].rank(pct=True).values, eps, 1-eps)
             v_act = np.clip(active[B].rank(pct=True).values, eps, 1-eps)
@@ -108,7 +102,7 @@ class CorrelationAnalyzer(BaseModel):
             lambda_lower_act = np.nan
             lambda_upper_act = np.nan
 
-        # Compile results
+
         self.results = {
             'pearson_full': round(combined[A].corr(combined[B]), 2),
             'pearson_active': round((pearson_act := (active[A].corr(active[B]) if not active.empty else np.nan)), 2),
@@ -116,33 +110,36 @@ class CorrelationAnalyzer(BaseModel):
             'spearman_active': round((spearman_act := (active[A].corr(active[B], method='spearman') if not active.empty else np.nan)), 2),
             'kendall_full': round(combined[A].corr(combined[B], method='kendall'), 2),
             'kendall_active': round((kendall_act := (active[A].corr(active[B], method='kendall') if not active.empty else np.nan)), 2),
-            'clayton_lower_full': round(lambda_lower_full, 2),
-            'clayton_lower_active': round(lambda_lower_act, 2) if not active.empty else np.nan,
-            'gumbel_upper_full': round(lambda_upper_full, 2),
-            'gumbel_upper_active': round(lambda_upper_act, 2) if not active.empty else np.nan
+            'clayton_lambda_full': round(lambda_lower_full, 2),
+            'clayton_lambda_active': round(lambda_lower_act, 2) if not active.empty else np.nan,
+            'gumbel_lambda_full': round(lambda_upper_full, 2),
+            'gumbel_lambda_active': round(lambda_upper_act, 2) if not active.empty else np.nan
         }
         return self.results
     
     def plot(self, rolling_window: int = 180) -> None:
-        if self.combined is None or self.combined.empty:
-            raise ValueError("No data to plot. Run .run() first.")
-        names = list(self.mapped_trades.keys())
-        A, B = names[0], names[1]
+     if self.combined is None or self.combined.empty:
+        raise ValueError("No data to plot. Run .run() first.")
+     names = list(self.mapped_trades.keys())
+     A, B = names[0], names[1]
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-        for name, df in self.mapped_trades.items():
-            ax1.plot(df['Equity'], label=name)
-        ax1.set_title("Equity Curves")
-        ax1.legend(); ax1.grid(True)
+     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
-        roll_corr = self.combined[A].rolling(rolling_window).corr(self.combined[B])
-        ax2.plot(roll_corr, label=f"{rolling_window}-day Rolling Corr")
-        ax2.axhline(0, linestyle='--', color='gray')
-        ax2.set_title("Rolling Correlation")
-        ax2.set_ylabel("Corr")
-        ax2.legend(); ax2.grid(True)
 
-        plt.tight_layout()
-        plt.show()
+     for name, df in self.mapped_trades.items():
+        ax1.plot(df['Equity'], label=name)
+     ax1.set_title("Equity Curves")
+     ax1.legend(); ax1.grid(True)
+
+
+     roll_full = self.combined[A].rolling(rolling_window).corr(self.combined[B])
+     ax2.plot(roll_full,   label=f"{rolling_window}-Day Rolling Corr (Full)")
+     ax2.axhline(0, linestyle='--', color='gray')
+     ax2.set_title("Rolling Correlation")
+     ax2.set_ylabel("Correlation")
+     ax2.legend(); ax2.grid(True)
+
+     plt.tight_layout()
+     plt.show()
 
 ####
