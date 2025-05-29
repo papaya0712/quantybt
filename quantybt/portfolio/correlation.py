@@ -14,13 +14,15 @@ warnings.filterwarnings("ignore", category=InterpolationWarning)
 
 ####
 class CorrelationAnalyzer(BaseModel):
+
     """
     Correlation Analyzer aiming or robust correlation analysis
 
     Parameter:
     - rolling_window: defines the lookback window for the rolling correlation
-    """
 
+    """
+    
     def __init__(self, trade_sources: Dict[str, Dict[str, str]]):
         super().__init__()
         self.trade_sources = trade_sources
@@ -98,8 +100,8 @@ class CorrelationAnalyzer(BaseModel):
         return self.results
     
     def _run_multivariate_analysis(self, rolling_window, test_stationary):
-        """dummy"""
-        return 
+        
+        return "dummy"
 
     def plot(self, rolling_window: int = 180):
         if self.combined is None:
@@ -113,13 +115,12 @@ class CorrelationAnalyzer(BaseModel):
             rolling_corr = combined['A'].rolling(window=rolling_window).corr(combined['B'])
 
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 12), sharex=True)
-
             ax1.plot(a_data.index, a_data['Equity'], label='Strategy A')
             ax1.plot(b_data.index, b_data['Equity'], label='Strategy B')
             ax1.set_title("Cumulative Equity Curves")
             ax1.legend()
             ax1.grid(True)
-
+            
             ax2.plot(rolling_corr.index, rolling_corr, label=f'{rolling_window}-Day Rolling Correlation', linewidth=2)
             ax2.axhline(0, color='gray', linestyle='--', linewidth=1)
             ax2.set_ylabel('Correlation')
@@ -134,4 +135,3 @@ class CorrelationAnalyzer(BaseModel):
             print("dummy")
 
 ####
-

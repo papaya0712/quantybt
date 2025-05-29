@@ -1,6 +1,6 @@
 # QuantyBT 🪐
 
-**A framework for quantitative backtesting and portfolio optimization, based on [vectorbt](https://github.com/polakowo/vectorbt). Focused on statistical robustness, modularity, and seamless integration of strategies, models, and crypto-native data.**  
+**A framework for quantitative backtesting and portfolio optimization, based on [vectorbt](https://github.com/polakowo/vectorbt). Focused on statistical robustness, modularity, and seamless integration of strategies, models, and crypto-native data loader.**  
 ---
 
 ## Current Models
