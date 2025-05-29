@@ -17,7 +17,7 @@ from pandas.tseries.frequencies import to_offset
 from pandas import DateOffset
 
 @dataclass
-class _WFOSplitCfg:
+class WFOSplitCfg:
     """
     Attributes:
         n_folds: Number of folds (only used in anchored_time mode).
@@ -47,7 +47,7 @@ class AdvancedOptimizer:
         max_evals: int = 25,
         target_metric: str = "sharpe_ratio",
         beta: float = 0.3,
-        split_cfg: Union[_WFOSplitCfg, Sequence[_WFOSplitCfg]] = _WFOSplitCfg(),
+        split_cfg: Union[WFOSplitCfg, Sequence[WFOSplitCfg]] = WFOSplitCfg(),
     ):
         self.analyzer = analyzer
         self.strategy = analyzer.strategy
@@ -60,12 +60,12 @@ class AdvancedOptimizer:
         self.slippage = analyzer.slippage
         self.s = analyzer.s
 
-        # Split configurations
-        self.split_cfgs: List[_WFOSplitCfg] = (
-            [split_cfg] if isinstance(split_cfg, _WFOSplitCfg) else list(split_cfg)
+        
+        self.split_cfgs: List[WFOSplitCfg] = (
+            [split_cfg] if isinstance(split_cfg, WFOSplitCfg) else list(split_cfg)
         )
         logging.debug(f"Configured Walk-Forward Split Configs: {self.split_cfgs}")
-        # Prepare splits
+        
         self._splits: List[Tuple[pd.DataFrame, pd.DataFrame]] = self._prepare_splits()
         if not self._splits:
             raise ValueError(
@@ -76,7 +76,6 @@ class AdvancedOptimizer:
             )
         logging.debug(f"Generated total of {len(self._splits)} Walk-Forward splits")
 
-        # State
         self.best_params: Optional[dict] = None
         self.trials: Optional[Trials] = None
         self.train_pf = None
@@ -86,7 +85,6 @@ class AdvancedOptimizer:
         self._history_gl_max: List[float] = []
         self.trial_metrics: List[Tuple[float, float]] = []
 
-        # Metric mapping
         self.metrics_map = {
             "sharpe_ratio": lambda pf: self.s._risk_adjusted_metrics(self.timeframe, pf)[0],
             "sortino_ratio": lambda pf: self.s._risk_adjusted_metrics(self.timeframe, pf)[1],
@@ -97,7 +95,7 @@ class AdvancedOptimizer:
             "profit_factor": lambda pf: pf.stats().get("Profit Factor", np.nan),
         }
 
-    def _generate_splits(self, df: pd.DataFrame, cfg: _WFOSplitCfg) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def _generate_splits(self, df: pd.DataFrame, cfg: WFOSplitCfg) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
    
      df = df.sort_index()
      if not isinstance(df.index, pd.DatetimeIndex):
@@ -225,7 +223,8 @@ class AdvancedOptimizer:
                     tp_stop=params.get("tp_pct"),
                 )
                 m_val = self._metric(pf_val)
-                # Compute generalization loss
+                
+                # gl
                 if higher_is_better:
                     if m_is <= 0 or not np.isfinite(m_is) or not np.isfinite(m_val):
                         gl = 1.0

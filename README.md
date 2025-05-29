@@ -38,8 +38,7 @@
 ### 🔸 Portfolio Modules
 
 - **CorrelationAnalyzer**  
-   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations. 
-   Supports bivariate and multivariate analysis.
+   Calculates Pearson, Spearman, Kendall-Tau and **Copula-Tail-Dependence** correlations.
 
 - **EqualWeightPortfolio**  
    Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. 
