@@ -13,7 +13,6 @@ def _clayton_logpdf(theta, u, v):
 def _gumbel_logpdf(theta, u, v):
     tu = (-np.log(u))**theta
     tv = (-np.log(v))**theta
-    c_val = np.exp(- (tu + tv)**(1.0/theta))
     inner = (tu + tv)**(1.0/theta)
     return (
         np.log(theta)

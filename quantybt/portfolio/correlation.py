@@ -45,15 +45,10 @@ class CorrelationAnalyzer(BaseModel):
         if self.n_strategies == 2:
             return self._run_bivariate_analysis(rolling_window, test_stationary)
         else:
-            raise NotImplementedError("Multivariate analysis not implemented.")
+            return self._run_multivariate_analysis(test_stationary)
 
-    def _run_bivariate_analysis(
-        self,
-        rolling_window: int,
-        test_stationary: bool) -> Dict[str, float]:
-        """
-        Bivariate analysis with ±1-day tolerance for "active" filter.
-        """
+    def _run_bivariate_analysis(self, rolling_window: int,test_stationary: bool) -> Dict[str, float]:
+
         names = list(self.mapped_trades.keys())
         A, B = names[0], names[1]
 
@@ -117,27 +112,74 @@ class CorrelationAnalyzer(BaseModel):
         }
         return self.results
     
+    def _run_multivariate_analysis(self, test_stationary: bool):
+         names = list(self.mapped_trades.keys())
+         combined = pd.concat([self.mapped_trades[name]['DailyReturn'].rename(name) for name in names],axis=1, join='inner').dropna(how='any')
+         self.combined = combined
+
+         if test_stationary:
+          for name in names:
+            stat = self._is_stationary(combined[name])
+            if not stat['stationary']:
+                print(f"{name} not stationary | ADF p={stat['adf_p']:.4f}, KPSS p={stat['kpss_p']:.4f}")
+         
+         active_masks = []
+         for name in names:
+          mask = combined[name] != 0
+          mask_fwd = mask.shift(1, fill_value=False)
+          mask_bwd = mask.shift(-1, fill_value=False)
+          active_masks.append(mask | mask_fwd | mask_bwd)
+
+         active_mask = np.logical_or.reduce(active_masks)
+         active = combined.loc[active_mask]
+
+         pearson_corr = combined.corr(method='pearson')
+         pearson_corr_active = active.corr(method='pearson')
+
+         
+         self.results = {
+         "pearson_corr_full": pearson_corr.round(2),
+         "pearson_corr_active": pearson_corr_active.round(2),
+         }
+
+         return self.results
+    
     def plot(self, rolling_window: int = 180) -> None:
      if self.combined is None or self.combined.empty:
         raise ValueError("No data to plot. Run .run() first.")
+
      names = list(self.mapped_trades.keys())
-     A, B = names[0], names[1]
-
-     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-
+     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=False)
 
      for name, df in self.mapped_trades.items():
         ax1.plot(df['Equity'], label=name)
      ax1.set_title("Equity Curves")
-     ax1.legend(); ax1.grid(True)
+     ax1.legend()
+     ax1.grid(True)
+
+     if self.n_strategies == 2 and 'pearson_full' in self.results:
+        A, B = names[0], names[1]
+        roll_full = self.combined[A].rolling(rolling_window).corr(self.combined[B])
+        ax2.plot(roll_full, label=f"{rolling_window}-Day Rolling Corr (Full)")
+        ax2.axhline(0, linestyle='--', color='gray')
+        ax2.set_title("Rolling Correlation")
+        ax2.set_ylabel("Correlation")
+        ax2.legend()
+        ax2.grid(True)
+
+     elif 'pearson_corr_active' in self.results:
+        import seaborn as sb
+        corr_matrix = self.results['pearson_corr_active']
+        mask = np.eye(corr_matrix.shape[0], dtype=bool) 
+        sb.heatmap(corr_matrix, mask=mask, annot=True, cmap='crest',center=0, ax=ax2)
+        ax2.set_title("Pearson Corr. Matrix (Active ±1)")
 
 
-     roll_full = self.combined[A].rolling(rolling_window).corr(self.combined[B])
-     ax2.plot(roll_full,   label=f"{rolling_window}-Day Rolling Corr (Full)")
-     ax2.axhline(0, linestyle='--', color='gray')
-     ax2.set_title("Rolling Correlation")
-     ax2.set_ylabel("Correlation")
-     ax2.legend(); ax2.grid(True)
+      
+     else:
+      ax2.text(0.5, 0.5, "No analysis results to plot.",
+                 ha='center', va='center', fontsize=12)
+      ax2.axis('off')
 
      plt.tight_layout()
      plt.show()
