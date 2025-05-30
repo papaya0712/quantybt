@@ -9,21 +9,20 @@ from plotly.subplots import make_subplots
 from .stats import Stats
 from .analyzer import Analyzer
 
-# Finite Difference Styile local check
 class LocalSensitivityAnalyzer:
     """
     Local Sensitivity Analyzer (LSA)
 
     Evaluates the local sensitivity of a trading strategy by perturbing input parameters 
-    by a specified percentage (e.g. ±5%). For each tested parameter, the strategy is 
-    backtested at the baseline, lower, and upper perturbation levels.
+    either by percentage (relative) or fixed values (absolute). For each tested parameter, 
+    the strategy is backtested at baseline, lower, and upper perturbation levels.
     """
 
     def __init__(
         self,
         analyzer,
         base_params: dict,
-        param_perturbations: Union[float, List[float], Dict[str, float]],
+        param_perturbations: Dict[str, Union[float, Dict[str, float]]],
         metrics: Union[str, List[str]] = "sharpe_ratio"
     ):
         self.analyzer = analyzer
@@ -50,21 +49,20 @@ class LocalSensitivityAnalyzer:
     def _expand_perturbations(self, perturbations):
         plan = []
 
-        if isinstance(perturbations, dict):
-            for param, pct in perturbations.items():
-                if param in self.base_params and isinstance(self.base_params[param], (int, float)):
-                    plan.append((param, pct))
-        elif isinstance(perturbations, (float, int)):
-            for param, val in self.base_params.items():
-                if isinstance(val, (int, float)):
-                    plan.append((param, float(perturbations)))
-        elif isinstance(perturbations, list):
-            for pct in perturbations:
-                for param, val in self.base_params.items():
-                    if isinstance(val, (int, float)):
-                        plan.append((param, float(pct)))
-        else:
-            raise ValueError("param_perturbations must be float, list of floats, or dict")
+        for param, val in perturbations.items():
+            if param not in self.base_params:
+                continue
+
+            base_val = self.base_params[param]
+
+            if isinstance(val, dict) and "down" in val and "up" in val:
+                plan.append((param, val["down"], val["up"], "absolute"))
+            elif isinstance(val, (float, int)) and isinstance(base_val, (int, float)):
+                down_val = base_val * (1 - val)
+                up_val = base_val * (1 + val)
+                plan.append((param, down_val, up_val, "relative"))
+            else:
+                print(f"[LSA] Skipped invalid perturbation format for {param}")
 
         return plan
 
@@ -79,8 +77,9 @@ class LocalSensitivityAnalyzer:
             init_cash=self.analyzer.init_cash,
             fees=self.analyzer.fees,
             slippage=self.analyzer.slippage,
-            tp_stop=full_params.get("tp_pct"),
-            sl_stop=full_params.get("sl_pct"),
+            sl_stop=full_params.get("sl_stop", full_params.get("sl_pct", None)),
+            tp_stop=full_params.get("tp_stop", full_params.get("tp_pct", None)),
+            size=full_params.get("size", None)
         )
         return analyzer.pf
 
@@ -91,21 +90,22 @@ class LocalSensitivityAnalyzer:
         base_pf = self._run_backtest({})
         base_metrics = {m: self.metric_funcs[m](base_pf) for m in self.metrics}
 
-        for param, pct in tqdm(self.perturbation_plan, desc="LSA Parameters"):
-            base_val = self.base_params.get(param, None)
-            if base_val is None or not isinstance(base_val, (int, float)):
+        for param, down_val, up_val, mode in tqdm(self.perturbation_plan, desc="LSA Parameters"):
+            base_val = self.base_params.get(param)
+            if base_val is None:
                 continue
 
-            down_val = base_val * (1 - pct)
-            up_val = base_val * (1 + pct)
-            
             if isinstance(base_val, int):
                 down_val = round(down_val)
                 up_val = round(up_val)
 
+            pct_down = (base_val - down_val) / base_val if base_val != 0 else 0
+            pct_up   = (up_val - base_val) / base_val if base_val != 0 else 0
+
             row = {
                 "parameter": param,
-                "pct_change": pct,
+                "mode": mode,
+                "pct_change": None if mode == "absolute" else (pct_down + pct_up) / 2,
                 "baseline": base_val,
                 "down_val": down_val,
                 "up_val": up_val
@@ -114,6 +114,7 @@ class LocalSensitivityAnalyzer:
             for m in self.metrics:
                 row[f"{m}_base"] = base_metrics[m]
 
+            # Run down test
             try:
                 pf_down = self._run_backtest({param: down_val})
                 for m in self.metrics:
@@ -126,6 +127,7 @@ class LocalSensitivityAnalyzer:
                     row[f"{m}_down"] = np.nan
                     row[f"{m}_delta_down"] = np.nan
 
+            # Run up test
             try:
                 pf_up = self._run_backtest({param: up_val})
                 for m in self.metrics:
@@ -140,71 +142,69 @@ class LocalSensitivityAnalyzer:
 
             rows.append(row)
 
-        df = pd.DataFrame(rows).set_index(["parameter", "pct_change"])
+        df = pd.DataFrame(rows).set_index(["parameter", "mode"])
         print("\n[LSA] Sensitivity analysis complete.")
         return df
-    
+
     def plot(self, df: pd.DataFrame, height_per_plot=400, width=1000):
-    
-     num_metrics = len(self.metrics)
-     total_height = height_per_plot * num_metrics
+        num_metrics = len(self.metrics)
+        total_height = height_per_plot * num_metrics
 
-     fig = make_subplots(
-        rows=num_metrics, cols=1,
-        shared_xaxes=False,
-        subplot_titles=[f"{metric.replace('_', ' ').title()}" for metric in self.metrics]
-     )
+        fig = make_subplots(
+            rows=num_metrics, cols=1,
+            shared_xaxes=False,
+            subplot_titles=[f"{metric.replace('_', ' ').title()}" for metric in self.metrics]
+        )
 
-     for i, metric in enumerate(self.metrics, start=1):
-        metric_cols = [col for col in df.columns if col.startswith(f"{metric}_")]
-        df_metric = df[metric_cols].copy()
-        params = df_metric.index.get_level_values("parameter").unique()
-        deltas = []
-        for param in params:
-            param_data = df_metric.loc[param]
-            avg_down = -param_data[f"{metric}_delta_down"].mean()
-            avg_up = param_data[f"{metric}_delta_up"].mean()
-            max_effect = max(abs(avg_down), abs(avg_up))
-            deltas.append((param, avg_down, avg_up, max_effect))
+        for i, metric in enumerate(self.metrics, start=1):
+            metric_cols = [col for col in df.columns if col.startswith(f"{metric}_")]
+            df_metric = df[metric_cols].copy()
+            params = df_metric.index.get_level_values("parameter").unique()
+            deltas = []
+            for param in params:
+                param_data = df_metric.loc[param]
+                avg_down = -param_data[f"{metric}_delta_down"].mean()
+                avg_up = param_data[f"{metric}_delta_up"].mean()
+                max_effect = max(abs(avg_down), abs(avg_up))
+                deltas.append((param, avg_down, avg_up, max_effect))
 
-        deltas_sorted = sorted(deltas, key=lambda x: x[3], reverse=True)
-        params_sorted = [x[0] for x in deltas_sorted]
-        avg_down = [x[1] for x in deltas_sorted]
-        avg_up = [x[2] for x in deltas_sorted]
+            deltas_sorted = sorted(deltas, key=lambda x: x[3], reverse=True)
+            params_sorted = [x[0] for x in deltas_sorted]
+            avg_down = [x[1] for x in deltas_sorted]
+            avg_up = [x[2] for x in deltas_sorted]
 
-        fig.add_trace(go.Bar(
-            y=params_sorted,
-            x=avg_down,
-            name='-Δ',
-            orientation='h',
-            marker=dict(color='#EF553B'),
-            showlegend=(i == 1),
-            hovertext=[f"Δ: {x:.3f}" for x in avg_down]
-        ), row=i, col=1)
+            fig.add_trace(go.Bar(
+                y=params_sorted,
+                x=avg_down,
+                name='-Δ',
+                orientation='h',
+                marker=dict(color='#EF553B'),
+                showlegend=(i == 1),
+                hovertext=[f"Δ: {x:.3f}" for x in avg_down]
+            ), row=i, col=1)
 
-        fig.add_trace(go.Bar(
-            y=params_sorted,
-            x=avg_up,
-            name='+Δ',
-            orientation='h',
-            marker=dict(color='#00CC96'),
-            showlegend=(i == 1),
-            hovertext=[f"Δ: {x:.3f}" for x in avg_up]
-        ), row=i, col=1)
+            fig.add_trace(go.Bar(
+                y=params_sorted,
+                x=avg_up,
+                name='+Δ',
+                orientation='h',
+                marker=dict(color='#00CC96'),
+                showlegend=(i == 1),
+                hovertext=[f"Δ: {x:.3f}" for x in avg_up]
+            ), row=i, col=1)
 
-     fig.update_layout(
-        height=total_height,
-        width=width,
-        title_text="<b>Local Sensitivity Analysis - Tornado Charts</b>",
-        template="plotly_dark",
-        barmode='relative',
-        hoverlabel=dict(bgcolor='#1A1A1A', font_size=13),
-        margin=dict(l=120, r=50, t=60, b=40),
-     )
+        fig.update_layout(
+            height=total_height,
+            width=width,
+            title_text="<b>Local Sensitivity Analysis - Tornado Charts</b>",
+            template="plotly_dark",
+            barmode='relative',
+            hoverlabel=dict(bgcolor='#1A1A1A', font_size=13),
+            margin=dict(l=120, r=50, t=60, b=40),
+        )
 
-     fig.show()
+        fig.show()
 
-# Gridsearch for 2 params
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
 
@@ -255,8 +255,9 @@ class Gridsearcher:
             init_cash=self.analyzer.init_cash,
             fees=self.analyzer.fees,
             slippage=self.analyzer.slippage,
-            tp_stop=full_params.get("tp_pct"),
-            sl_stop=full_params.get("sl_pct"),
+            sl_stop=full_params.get("sl_stop", full_params.get("sl_pct", None)),
+            tp_stop=full_params.get("tp_stop", full_params.get("tp_pct", None)),
+            size=full_params.get("size", None)
         )
         return analyzer.pf
 
@@ -319,8 +320,9 @@ class Gridsearcher:
      plt.ylabel(self.y["param"])
      plt.tight_layout()
      plt.show()
-     
-# Morris
+
+
+#
 
 
 
