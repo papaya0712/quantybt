@@ -191,6 +191,3 @@ class Bootstrapping:
             mc_data = self.mc_with_replacement()
             mc_results = pd.DataFrame(mc_data['simulated_stats'])
         return _PlotBootstrapping(self).plot_histograms(mc_results)
-
-    
-#

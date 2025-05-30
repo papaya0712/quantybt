@@ -180,80 +180,98 @@ class AdvancedOptimizer:
         return "longonly"
 
     def _objective(self, params: dict) -> dict:
-        try:
-            seed = int(abs(hash(frozenset(params.items()))) % 2**32)
-            np.random.seed(seed)
-            losses, is_metrics, val_metrics = [], [], []
-            higher_is_better = self.target_metric not in ["max_drawdown", "volatility"]
+     try:
+        seed = int(abs(hash(frozenset(params.items()))) % 2**32)
+        np.random.seed(seed)
+        losses, is_metrics, val_metrics = [], [], []
+        higher_is_better = self.target_metric not in ["max_drawdown", "volatility"]
 
-            for train_df, val_df in self._splits:
-                # In-Sample
-                df_train = self.strategy.preprocess_data(train_df.copy(), params)
-                sig_train = self.strategy.generate_signals(df_train, **params)
-                pf_train = vbt.Portfolio.from_signals(
-                    close=df_train[self.s.price_col],
-                    entries=sig_train.get("entries"),
-                    exits=sig_train.get("exits"),
-                    short_entries=sig_train.get("short_entries"),
-                    short_exits=sig_train.get("short_exits"),
-                    freq=self.timeframe,
-                    init_cash=self.init_cash,
-                    fees=self.fees,
-                    slippage=self.slippage,
-                    direction=self._choose_direction(sig_train),
-                    sl_stop=params.get("sl_pct"),
-                    tp_stop=params.get("tp_pct"),
-                )
-                m_is = self._metric(pf_train)
-                # Out-of-Sample
-                df_val = self.strategy.preprocess_data(val_df.copy(), params)
-                sig_val = self.strategy.generate_signals(df_val, **params)
-                pf_val = vbt.Portfolio.from_signals(
-                    close=df_val[self.s.price_col],
-                    entries=sig_val.get("entries"),
-                    exits=sig_val.get("exits"),
-                    short_entries=sig_val.get("short_entries"),
-                    short_exits=sig_val.get("short_exits"),
-                    freq=self.timeframe,
-                    init_cash=self.init_cash,
-                    fees=self.fees,
-                    slippage=self.slippage,
-                    direction=self._choose_direction(sig_val),
-                    sl_stop=params.get("sl_pct"),
-                    tp_stop=params.get("tp_pct"),
-                )
-                m_val = self._metric(pf_val)
-                
-                # gl
-                if higher_is_better:
-                    if m_is <= 0 or not np.isfinite(m_is) or not np.isfinite(m_val):
-                        gl = 1.0
-                    else:
-                        gl = max(0.0, min(1.0, 1.0 - (m_val / m_is)))
+        for train_df, val_df in self._splits:
+            # In-Sample
+            df_train = self.strategy.preprocess_data(train_df.copy(), params)
+            sig_train = self.strategy.generate_signals(df_train, **params)
+
+            sl_series_train = self.analyzer._expand_param(params.get("sl_stop"), df_train)
+            tp_series_train = self.analyzer._expand_param(params.get("tp_stop"), df_train)
+            size_series_train = self.analyzer._expand_param(params.get("size"), df_train)
+
+            pf_train = vbt.Portfolio.from_signals(
+                close=df_train[self.s.price_col],
+                entries=sig_train.get("entries"),
+                exits=sig_train.get("exits"),
+                short_entries=sig_train.get("short_entries"),
+                short_exits=sig_train.get("short_exits"),
+                freq=self.timeframe,
+                init_cash=self.init_cash,
+                fees=self.fees,
+                slippage=self.slippage,
+                direction=self._choose_direction(sig_train),
+                sl_stop=sl_series_train,
+                tp_stop=tp_series_train,
+                size=size_series_train
+            )
+            m_is = self._metric(pf_train)
+
+            # Out-of-Sample
+            df_val = self.strategy.preprocess_data(val_df.copy(), params)
+            sig_val = self.strategy.generate_signals(df_val, **params)
+
+            sl_series_val = self.analyzer._expand_param(params.get("sl_stop"), df_val)
+            tp_series_val = self.analyzer._expand_param(params.get("tp_stop"), df_val)
+            size_series_val = self.analyzer._expand_param(params.get("size"), df_val)
+
+            pf_val = vbt.Portfolio.from_signals(
+                close=df_val[self.s.price_col],
+                entries=sig_val.get("entries"),
+                exits=sig_val.get("exits"),
+                short_entries=sig_val.get("short_entries"),
+                short_exits=sig_val.get("short_exits"),
+                freq=self.timeframe,
+                init_cash=self.init_cash,
+                fees=self.fees,
+                slippage=self.slippage,
+                direction=self._choose_direction(sig_val),
+                sl_stop=sl_series_val,
+                tp_stop=tp_series_val,
+                size=size_series_val
+            )
+            m_val = self._metric(pf_val)
+
+            # Generalization Loss
+            if higher_is_better:
+                if m_is <= 0 or not np.isfinite(m_is) or not np.isfinite(m_val):
+                    gl = 1.0
                 else:
-                    if m_val <= 0 or not np.isfinite(m_is) or not np.isfinite(m_val):
-                        gl = 1.0
-                    else:
-                        gl = max(0.0, min(1.0, 1.0 - (m_is / m_val)))
-                losses.append((-m_val, gl))
-                is_metrics.append(m_is)
-                val_metrics.append(m_val)
+                    gl = max(0.0, min(1.0, 1.0 - (m_val / m_is)))
+            else:
+                if m_val <= 0 or not np.isfinite(m_is) or not np.isfinite(m_val):
+                    gl = 1.0
+                else:
+                    gl = max(0.0, min(1.0, 1.0 - (m_is / m_val)))
 
-            if not losses:
-                return {"loss": np.inf, "status": STATUS_OK, "params": params}
-            m_val_avg = -np.mean([l[0] for l in losses])
-            gl_max = max(l[1] for l in losses)
-            scale_raw = np.std(self._history_diffs[-10:]) if len(self._history_diffs) >= 10 else 1.0
-            scale = np.clip(scale_raw if scale_raw > 0 else 1.0, 0.1, 10.0)
-            loss = -m_val_avg + self.beta * (gl_max / scale)
-            self._history_gl_max.append(gl_max)
-            self._history_diffs.append(loss)
-            self.trial_metrics.append((np.mean(is_metrics), np.mean(val_metrics)))
-            return {"loss": loss, "status": STATUS_OK, "params": params}
-        except Exception as e:
-            logging.getLogger(__name__).error(f"Objective error: {e}", exc_info=True)
-            return {"loss": np.inf, "status": STATUS_OK}
+            losses.append((-m_val, gl))
+            is_metrics.append(m_is)
+            val_metrics.append(m_val)
 
+        if not losses:
+            return {"loss": np.inf, "status": STATUS_OK, "params": params}
+
+        m_val_avg = -np.mean([l[0] for l in losses])
+        gl_max = max(l[1] for l in losses)
+        scale_raw = np.std(self._history_diffs[-10:]) if len(self._history_diffs) >= 10 else 1.0
+        scale = np.clip(scale_raw if scale_raw > 0 else 1.0, 0.1, 10.0)
+        loss = -m_val_avg + self.beta * (gl_max / scale)
+
+        self._history_gl_max.append(gl_max)
+        self._history_diffs.append(loss)
+        self.trial_metrics.append((np.mean(is_metrics), np.mean(val_metrics)))
+
+        return {"loss": loss, "status": STATUS_OK, "params": params}
+
+     except Exception as e:
+        logging.getLogger(__name__).error(f"Objective error: {e}", exc_info=True)
+        return {"loss": np.inf, "status": STATUS_OK}
+    
     def optimize(self) -> Tuple[dict, Trials]:
         self.trials = Trials()
         best = fmin(
@@ -281,59 +299,75 @@ class AdvancedOptimizer:
         return self.best_params, self.trials
 
     def evaluate(self) -> dict:
-        if self.best_params is None:
-            raise ValueError("Call optimize() before evaluate().")
-        # In-sample final
-        df_is = self.strategy.preprocess_data(self.analyzer.train_df.copy(), self.best_params)
-        sig_is = self.strategy.generate_signals(df_is, **self.best_params)
-        dir_is = self._choose_direction(sig_is)
-        self.train_pf = vbt.Portfolio.from_signals(
-            close=df_is[self.s.price_col],
-            entries=sig_is.get('entries'),
-            exits=sig_is.get('exits'),
-            short_entries=sig_is.get('short_entries'),
-            short_exits=sig_is.get('short_exits'),
+     if self.best_params is None:
+        raise ValueError("Call optimize() before evaluate().")
+
+     # In-sample final
+     df_is = self.strategy.preprocess_data(self.analyzer.train_df.copy(), self.best_params)
+     sig_is = self.strategy.generate_signals(df_is, **self.best_params)
+
+     sl_series_is = self.analyzer._expand_param(self.best_params.get("sl_stop"), df_is)
+     tp_series_is = self.analyzer._expand_param(self.best_params.get("tp_stop"), df_is)
+     size_series_is = self.analyzer._expand_param(self.best_params.get("size"), df_is)
+
+     dir_is = self._choose_direction(sig_is)
+     self.train_pf = vbt.Portfolio.from_signals(
+        close=df_is[self.s.price_col],
+        entries=sig_is.get('entries'),
+        exits=sig_is.get('exits'),
+        short_entries=sig_is.get('short_entries'),
+        short_exits=sig_is.get('short_exits'),
+        freq=self.timeframe,
+        init_cash=self.init_cash,
+        fees=self.fees,
+        slippage=self.slippage,
+        direction=dir_is,
+        sl_stop=sl_series_is,
+        tp_stop=tp_series_is,
+        size=size_series_is
+     )
+
+     # Out-of-sample splits
+     self.oos_pfs = []
+     for train_df, val_df in self._splits:
+        df_val = self.strategy.preprocess_data(val_df.copy(), self.best_params)
+        sig_val = self.strategy.generate_signals(df_val, **self.best_params)
+
+        sl_series_val = self.analyzer._expand_param(self.best_params.get("sl_stop"), df_val)
+        tp_series_val = self.analyzer._expand_param(self.best_params.get("tp_stop"), df_val)
+        size_series_val = self.analyzer._expand_param(self.best_params.get("size"), df_val)
+
+        dir_val = self._choose_direction(sig_val)
+        pf_val = vbt.Portfolio.from_signals(
+            close=df_val[self.s.price_col],
+            entries=sig_val.get('entries'),
+            exits=sig_val.get('exits'),
+            short_entries=sig_val.get('short_entries'),
+            short_exits=sig_val.get('short_exits'),
             freq=self.timeframe,
             init_cash=self.init_cash,
             fees=self.fees,
             slippage=self.slippage,
-            direction=dir_is,
-            sl_stop=self.best_params.get('sl_pct'),
-            tp_stop=self.best_params.get('tp_pct')
+            direction=dir_val,
+            sl_stop=sl_series_val,
+            tp_stop=tp_series_val,
+            size=size_series_val
         )
-        # Out-of-sample splits
-        self.oos_pfs = []
-        for train_df, val_df in self._splits:
-            df_val = self.strategy.preprocess_data(val_df.copy(), self.best_params)
-            sig_val = self.strategy.generate_signals(df_val, **self.best_params)
-            dir_val = self._choose_direction(sig_val)
-            pf_val = vbt.Portfolio.from_signals(
-                close=df_val[self.s.price_col],
-                entries=sig_val.get('entries'),
-                exits=sig_val.get('exits'),
-                short_entries=sig_val.get('short_entries'),
-                short_exits=sig_val.get('short_exits'),
-                freq=self.timeframe,
-                init_cash=self.init_cash,
-                fees=self.fees,
-                slippage=self.slippage,
-                direction=dir_val,
-                sl_stop=self.best_params.get('sl_pct'),
-                tp_stop=self.best_params.get('tp_pct')
-            )
-            self.oos_pfs.append(pf_val)
-        self.test_pf = self.oos_pfs[-1] if self.oos_pfs else None
-        train_summary = self.s.backtest_summary(self.train_pf, self.timeframe)
-        test_summary = self.s.backtest_summary(self.test_pf, self.timeframe) if self.test_pf else None
-        return {
-            'train_pf': self.train_pf,
-            'test_pf': self.test_pf,
-            'train_summary': train_summary,
-            'test_summary': test_summary,
-            'oos_pfs': self.oos_pfs,
-            'trial_metrics': self.trial_metrics
-        }
-    
+        self.oos_pfs.append(pf_val)
+
+     self.test_pf = self.oos_pfs[-1] if self.oos_pfs else None
+     train_summary = self.s.backtest_summary(self.train_pf, self.timeframe)
+     test_summary = self.s.backtest_summary(self.test_pf, self.timeframe) if self.test_pf else None
+
+     return {
+        'train_pf': self.train_pf,
+        'test_pf': self.test_pf,
+        'train_summary': train_summary,
+        'test_summary': test_summary,
+        'oos_pfs': self.oos_pfs,
+        'trial_metrics': self.trial_metrics
+     }
+
     def montecarlo_oos(self, n_sims: int = 2_000, random_seed: int = 69, batch_size: int = 500, timeframe: Optional[str] = None) -> Dict[str, pd.DataFrame]:
      if not getattr(self, 'oos_pfs', None):
         raise RuntimeError("use `evaluate()` first.")

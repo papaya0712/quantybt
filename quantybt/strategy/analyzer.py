@@ -1,6 +1,8 @@
 import pandas as pd
 import vectorbt as vbt
-from typing import Dict, Any, Optional
+from vectorbt.portfolio import Portfolio
+from vectorbt.portfolio.enums import SizeType
+from typing import Dict, Any, Optional, Union, Callable
 from .plots import _PlotBacktest
 from .utils import Utils
 from .stats import Stats
@@ -23,8 +25,10 @@ class Analyzer:
         fees: float = 0.0002,
         slippage: float = 0.000,
         trade_side: Optional[str] = 'longonly',
-        tp_stop: Optional[float] = None,
-        sl_stop: Optional[float] = None):
+        tp_stop: Union[None, float, pd.Series, Callable] = None,
+        sl_stop: Union[None, float, pd.Series, Callable] = None,
+        size:    Union[None, float, pd.Series, Callable] = None,
+    ):
         self.s = Stats(price_col=price_col)
         self.util = Utils()
         self.strategy = strategy
@@ -36,17 +40,19 @@ class Analyzer:
         self.slippage = slippage
         self.tp_stop = tp_stop
         self.sl_stop = sl_stop
+        self.size    = size
+        # Fix size type to percent
+        self.size_type = SizeType.Percent
         self.trade_side = trade_side
 
+        # Prepare data
         self.full_data = self.util.validate_data(full_data)
         self.full_data['timestamp'] = pd.to_datetime(self.full_data['timestamp'])
         self.full_data = (
             self.full_data
-            .set_index('timestamp', drop=True) 
+            .set_index('timestamp', drop=True)
             .sort_index()
-            )
-        
-        # ----------------------------
+        )
 
         if not isinstance(self.full_data.index, pd.DatetimeIndex):
             warnings.warn(
@@ -55,6 +61,7 @@ class Analyzer:
                 stacklevel=2
             )
 
+        # Split into train/test
         if test_size > 0:
             self.train_df, self.test_df = self.util.time_based_split(self.full_data, test_size)
             self.train_df = self.strategy.preprocess_data(self.train_df.copy(), params)
@@ -62,43 +69,48 @@ class Analyzer:
             self.train_df = self.strategy.preprocess_data(self.full_data.copy(), params)
             self.test_df = None
 
+        # Generate and validate signals
         self.signals = self.strategy.generate_signals(self.train_df, **params)
         self._validate_signals()
 
+        # Expand dynamic params to per-bar Series
+        sl_series = self._expand_param(self.sl_stop, self.train_df)
+        tp_series = self._expand_param(self.tp_stop, self.train_df)
+        size_series = self._expand_param(self.size, self.train_df)
+
+        # Build kwargs for Portfolio
+        portfolio_kwargs = dict(
+            close=self.train_df[self.s.price_col],
+            freq=self.timeframe,
+            init_cash=self.init_cash,
+            fees=self.fees,
+            slippage=self.slippage,
+            direction=self.trade_side,
+            size_type=self.size_type
+        )
+        # Signals
         if self.trade_side == 'shortonly':
-            portfolio_kwargs = dict(
-                close=self.train_df[self.s.price_col],
-                short_entries=self.signals['short_entries'],
-                short_exits=self.signals.get('short_exits'),
-                freq=self.timeframe,
-                init_cash=self.init_cash,
-                fees=self.fees,
-                slippage=self.slippage,
-                direction='shortonly'
-            )
+            portfolio_kwargs['short_entries'] = self.signals['short_entries']
+            portfolio_kwargs['short_exits'] = self.signals.get('short_exits')
         else:
-            portfolio_kwargs = dict(
-                close=self.train_df[self.s.price_col],
-                entries=self.signals.get('entries'),
-                exits=self.signals.get('exits'),
-                freq=self.timeframe,
-                init_cash=self.init_cash,
-                fees=self.fees,
-                slippage=self.slippage,
-                direction=self.trade_side
-            )
+            portfolio_kwargs['entries'] = self.signals.get('entries')
+            portfolio_kwargs['exits'] = self.signals.get('exits')
             if 'short_entries' in self.signals:
                 portfolio_kwargs['short_entries'] = self.signals['short_entries']
             if 'short_exits' in self.signals:
                 portfolio_kwargs['short_exits'] = self.signals['short_exits']
 
-        if self.tp_stop is not None:
-            portfolio_kwargs['tp_stop'] = self.tp_stop
-        if self.sl_stop is not None:
-            portfolio_kwargs['sl_stop'] = self.sl_stop
+        # Dynamic stops & size
+        if tp_series is not None:
+            portfolio_kwargs['tp_stop'] = tp_series
+        if sl_series is not None:
+            portfolio_kwargs['sl_stop'] = sl_series
+        if size_series is not None:
+            portfolio_kwargs['size'] = size_series
 
-        self.pf = vbt.Portfolio.from_signals(**portfolio_kwargs)
-    
+        # Create portfolio
+        self.pf = Portfolio.from_signals(**portfolio_kwargs)
+
     def _validate_signals(self):
         if self.trade_side == 'shortonly':
             required = ['short_entries', 'short_exits']
@@ -117,63 +129,72 @@ class Analyzer:
             raise ValueError("No short entry signals generated")
         if self.trade_side != 'shortonly' and not self.signals['entries'].any():
             raise ValueError("No entry signals generated")
-    
+
+    def _expand_param(self, param, df: pd.DataFrame) -> Optional[pd.Series]:
+        """
+        Convert a scalar, pd.Series, or Callable to a pd.Series aligned with df.index.
+        """
+        if param is None:
+            return None
+        result = param(df) if callable(param) else param
+        if not isinstance(result, pd.Series):
+            result = pd.Series(result, index=df.index)
+        return result
+
     def oos_test(self) -> Optional[vbt.Portfolio]:
         if self.test_df is None or self.test_df.empty:
             return None
         test_df = self.strategy.preprocess_data(self.test_df.copy(), self.params)
         test_signals = self.strategy.generate_signals(test_df, **self.params)
+        self._validate_signals()
 
+        sl_series = self._expand_param(self.sl_stop, test_df)
+        tp_series = self._expand_param(self.tp_stop, test_df)
+        size_series = self._expand_param(self.size, test_df)
+
+        pk = dict(
+            close=test_df[self.s.price_col],
+            freq=self.timeframe,
+            init_cash=self.init_cash,
+            fees=self.fees,
+            slippage=self.slippage,
+            direction=self.trade_side,
+            size_type=self.size_type
+        )
         if self.trade_side == 'shortonly':
-            pk = dict(
-                close=test_df[self.s.price_col],
-                short_entries=test_signals['short_entries'],
-                short_exits=test_signals.get('short_exits'),
-                freq=self.timeframe,
-                init_cash=self.init_cash,
-                fees=self.fees,
-                slippage=self.slippage,
-                direction='shortonly'
-            )
+            pk['short_entries'] = test_signals['short_entries']
+            pk['short_exits'] = test_signals.get('short_exits')
         else:
-            pk = dict(
-                close=test_df[self.s.price_col],
-                entries=test_signals.get('entries'),
-                exits=test_signals.get('exits'),
-                freq=self.timeframe,
-                init_cash=self.init_cash,
-                fees=self.fees,
-                slippage=self.slippage,
-                direction='longonly'
-            )
+            pk['entries'] = test_signals.get('entries')
+            pk['exits'] = test_signals.get('exits')
             if 'short_entries' in test_signals:
                 pk['short_entries'] = test_signals['short_entries']
             if 'short_exits' in test_signals:
                 pk['short_exits'] = test_signals['short_exits']
 
-        if self.tp_stop is not None:
-            pk['tp_stop'] = self.tp_stop
-        if self.sl_stop is not None:
-            pk['sl_stop'] = self.sl_stop
+        if tp_series is not None:
+            pk['tp_stop'] = tp_series
+        if sl_series is not None:
+            pk['sl_stop'] = sl_series
+        if size_series is not None:
+            pk['size'] = size_series
 
-        return vbt.Portfolio.from_signals(**pk)
+        return Portfolio.from_signals(**pk)
 
     def backtest_results(self) -> pd.DataFrame:
         return self.s.backtest_summary(self.pf, self.timeframe)
 
     def plot_backtest(self, title: str = 'Backtest Results'):
         return _PlotBacktest(self).plot_backtest(title=title)
-    
-    def export_trades(self, file_name: Optional[str] = 'strategy_report', save_dir: str = r"path"):
-   
-     trades = self.pf.trades.records_readable.copy()
-     os.makedirs(save_dir, exist_ok=True)
 
-     if not file_name.endswith('.feather'):
-        file_name += '.feather'
+    def export_trades(self, file_name: Optional[str] = 'strategy_report',save_dir: str = r"path"):
+        trades = self.pf.trades.records_readable.copy()
+        os.makedirs(save_dir, exist_ok=True)
 
-     file_path = os.path.join(save_dir, file_name)
-     trades.reset_index(drop=True).to_feather(file_path)  
-     print(f"Trades successfully exported to: {file_path}")
+        if not file_name.endswith('.feather'):
+            file_name += '.feather'
 
+        file_path = os.path.join(save_dir, file_name)
+        trades.reset_index(drop=True).to_feather(file_path)
+        print(f"Trades successfully exported to: {file_path}")
 #
