@@ -120,15 +120,25 @@ class Stats:
 
      return alpha, beta  
     
-    def _risk_of_ruin(self, win_rate: float, avg_win: float, avg_loss: float, risk_per_trade: float = 0.01, ruin_threshold: float = 1.0) -> float:
+    def _risk_of_ruin(self,win_rate: float,avg_win: float,avg_loss: float,risk_per_trade: float = 0.01,ruin_threshold: float = 1.0) -> float:
+
+     if risk_per_trade == 0 or np.isnan(risk_per_trade):
+        return np.nan
+
      if avg_loss == 0:
-         return np.nan 
+        return np.nan
+
+
      R = avg_win / abs(avg_loss)
      edge = win_rate * R - (1 - win_rate)
+
      if edge <= 0:
-        return 1.0  # 100%r
+        return 1.0  
+
      base = (1 - edge) / (1 + edge)
+
      n_trades = ruin_threshold / risk_per_trade
+
      return base ** n_trades
     
     def kelly_fraction(self, win_rate: float, avg_win: float, avg_loss: float) -> float:
