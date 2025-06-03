@@ -17,9 +17,11 @@ warnings.filterwarnings("ignore", category=InterpolationWarning)
 class CorrelationAnalyzer(BaseModel):
     """
     Correlation Analyzer for robust correlation analysis
-
     Computes lambda_lower and lambda_upper for Clayton and Gumbel copulas
-    over both full sample and active days only.
+    over both full sample and active days only. 
+
+    Note:
+    - All correlations are based on log returns
     """
     def __init__(self,trade_sources: Dict[str, Dict[str, str]]):
         super().__init__()
@@ -160,7 +162,7 @@ class CorrelationAnalyzer(BaseModel):
      if self.n_strategies == 2 and 'pearson_full' in self.results:
         A, B = names[0], names[1]
         roll_full = self.combined[A].rolling(rolling_window).corr(self.combined[B])
-        ax2.plot(roll_full, label=f"{rolling_window}-Day Rolling Corr (Full)")
+        ax2.plot(roll_full, label=f"{rolling_window}-Day Rolling Corr (Full, logreturn based)")
         ax2.axhline(0, linestyle='--', color='gray')
         ax2.set_title("Rolling Correlation")
         ax2.set_ylabel("Correlation")
@@ -172,7 +174,7 @@ class CorrelationAnalyzer(BaseModel):
         corr_matrix = self.results['pearson_corr_active']
         mask = np.eye(corr_matrix.shape[0], dtype=bool) 
         sb.heatmap(corr_matrix, mask=mask, annot=True, cmap='crest',center=0, ax=ax2)
-        ax2.set_title("Pearson Corr. Matrix (Active ±1)")
+        ax2.set_title("Pearson Corr. Matrix (Active ±1, logreturn based)")
 
 
       

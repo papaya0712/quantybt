@@ -1,9 +1,7 @@
 import os
 import pandas as pd
-import numpy as np
 from typing import Dict
 
-####
 class BaseModel:
     def __init__(self):
         pass

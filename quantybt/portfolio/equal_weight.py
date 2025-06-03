@@ -23,8 +23,7 @@ class EqualWeightedPortfolio(BaseModel):
 
     Note:
     - No intra day/position tracking supported -> intraday volatility may under estimated
-    - due to special crypto condition in markets and exchanges there is no rebalancing cost simulation needed 
-      assuming a cross margin mode is used on your crypto-exchange
+    - rebalancing costs wil be added soon
     """
     def __init__(self, trade_sources: Dict[str, Dict[str, str]], tz: str = 'UTC'):
         super().__init__()
