@@ -3,7 +3,6 @@ import numpy as np
 from typing import List, Optional
 from scipy.optimize import minimize
 
-
 # ---------------------------------------------------------------- # tail dependence correlation
 
 def _clayton_logpdf(theta, u, v):

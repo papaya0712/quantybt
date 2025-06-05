@@ -202,6 +202,7 @@ class Permutation:
      - much more compuational costs than simple bootstrapping, start with a few hundred simulations first
      - Autocorrelation, Volatility Cluster, etc will be destroyed
      - only permutates prices, therefore cannot be used for strategys which are using volume etc
+     
     """
     def __init__(self, analyzer = None, n_sims: int = 100):
         pass
@@ -216,7 +217,7 @@ class Permutation:
     def run(self):
         """
         returns a p-value, the higher the p-value the more your strategy sucks :)
-        
+
         """
         pass
 

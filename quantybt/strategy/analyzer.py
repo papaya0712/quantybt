@@ -7,9 +7,9 @@ from .plots import _PlotBacktest
 from .utils import Utils
 from .stats import Stats
 from .base_strategy import Strategy
-
 import os
 import warnings
+
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class Analyzer:
@@ -156,48 +156,6 @@ class Analyzer:
                 result = pd.Series(result, index=df.index)
             return result
         raise TypeError(f"Parameter-Typ {type(param)} not supported")
-
-    def oos_test(self) -> Optional[vbt.Portfolio]:
-        if self.test_df is None or self.test_df.empty:
-            return None
-
-        test_df = self.strategy.preprocess_data(self.test_df.copy(), self.params)
-        raw_signals = self.strategy.generate_signals(test_df, **self.params)
-        self._validate_signals(raw_signals)
-        signals = self.signals
-
-        sl_series = self._expand_param(self.sl_stop, test_df)
-        tp_series = self._expand_param(self.tp_stop, test_df)
-        size_series = self._expand_param(self.size, test_df)
-
-        pk = dict(
-            close=test_df[self.s.price_col],
-            freq=self.timeframe,
-            init_cash=self.init_cash,
-            fees=self.fees,
-            slippage=self.slippage,
-            direction=self.trade_side,
-            size_type=self.size_type
-        )
-        if self.trade_side == 'shortonly':
-            pk['short_entries'] = signals['short_entries']
-            pk['short_exits'] = signals['short_exits']
-        else:
-            pk['entries'] = signals['entries']
-            pk['exits'] = signals['exits']
-            if 'short_entries' in signals:
-                pk['short_entries'] = signals['short_entries']
-            if 'short_exits' in signals:
-                pk['short_exits'] = signals['short_exits']
-
-        if tp_series is not None:
-            pk['tp_stop'] = tp_series
-        if sl_series is not None:
-            pk['sl_stop'] = sl_series
-        if size_series is not None:
-            pk['size'] = size_series
-
-        return Portfolio.from_signals(**pk)
 
     def backtest_results(self) -> pd.DataFrame:
         return self.s.backtest_summary(self.pf, self.timeframe)
