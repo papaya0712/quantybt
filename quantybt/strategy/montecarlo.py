@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from typing import Optional, List, Dict
 from tqdm import tqdm
 from .plots import _PlotBootstrapping
+from .analyzer import Analyzer
 
 try:
     from numba import njit
@@ -193,39 +196,162 @@ class Bootstrapping:
             mc_results = pd.DataFrame(mc_data['simulated_stats'])
         return _PlotBootstrapping(self).plot_histograms(mc_results)
 
+####
+
 class Permutation:
     """
-    permutates the orginal logreturn series of your asset and generates n - synthetic price paths for testing.
-    can help to avoid/detect data mining bias
+    Permutation test for detecting data mining bias. Recommended at least 200 runs (Comp. Cost are much higher n_sims = n_backtests).
+    Outputs a p-value
 
     Note:
-     - much more compuational costs than simple bootstrapping, start with a few hundred simulations first
-     - Autocorrelation, Volatility Cluster, etc will be destroyed
-     - only permutates prices, therefore cannot be used for strategys which are using volume etc
-     
+     - Permutation of orginal asset price series will destroy autocorrelation and other timeseries features
+     - the higher the p-value -> the more your strategy sucks. should be < 0.10
     """
-    def __init__(self, analyzer = None, n_sims: int = 100):
-        pass
+    def __init__(
+        self,
+        analyzer: Analyzer,
+        n_sims: int = 200,
+        seed: Optional[int] = None):
 
-    def _get_synthetic_data(self):
+        self.analyzer = analyzer
+        self.full_data = analyzer.full_data.copy()
+        self.strategy = analyzer.strategy
+        self.params = analyzer.params
+        self.timeframe = analyzer.timeframe
+        self.init_cash = analyzer.init_cash
+        self.fees = analyzer.fees
+        self.slippage = analyzer.slippage
+        self.trade_side = analyzer.trade_side
+        self.price_col = analyzer.s.price_col
+        self.sl_stop = analyzer.sl_stop
+        self.tp_stop = analyzer.tp_stop
+        self.size = analyzer.size
 
-        pass
+        self.n_sims = n_sims
+        self.seed = seed
+
+        self.synthetic_paths: List[pd.DataFrame] = []
+        self.synthetic_metrics: List[float] = []
+        self.original_metric: Optional[float] = None
+        self.p_value: Optional[float] = None
+
+    def _get_synthetic_price_paths(self) -> None:
+        ohlc = self.full_data[['open', 'high', 'low', 'close']]
+        n_bars = len(ohlc)
+        time_index = ohlc.index
+        log_bars = np.log(ohlc[['open', 'high', 'low', 'close']]).to_numpy()
+
+        base_seed = self.seed if self.seed is not None else 0
+
+        for i in tqdm(range(self.n_sims), desc="Generating permutations"):
+            np.random.seed(base_seed + i)
+            start_bar = log_bars[0].copy()
+
+            r_o = (log_bars[:, 0] - np.concatenate(([np.nan], log_bars[:-1, 3])))[1:]
+            r_h = (log_bars[:, 1] - log_bars[:, 0])[1:]
+            r_l = (log_bars[:, 2] - log_bars[:, 0])[1:]
+            r_c = (log_bars[:, 3] - log_bars[:, 0])[1:]
+
+            perm_n = n_bars - 1
+            idx = np.arange(perm_n)
+            perm_indices_hlc = np.random.permutation(idx)
+            perm_indices_o = np.random.permutation(idx)
+
+            perm_high = r_h[perm_indices_hlc]
+            perm_low = r_l[perm_indices_hlc]
+            perm_close = r_c[perm_indices_hlc]
+            perm_open = r_o[perm_indices_o]
+
+            perm_bars_log = np.zeros_like(log_bars)
+            perm_bars_log[0] = start_bar
+
+            for t in range(1, n_bars):
+                k = t - 1
+                perm_bars_log[t, 0] = perm_bars_log[t-1, 3] + perm_open[k]
+                perm_bars_log[t, 1] = perm_bars_log[t, 0] + perm_high[k]
+                perm_bars_log[t, 2] = perm_bars_log[t, 0] + perm_low[k]
+                perm_bars_log[t, 3] = perm_bars_log[t, 0] + perm_close[k]
+
+            perm_bars = np.exp(perm_bars_log)
+            perm_df = pd.DataFrame(
+                perm_bars,
+                index=time_index,
+                columns=['open', 'high', 'low', 'close']
+            )
+            self.synthetic_paths.append(perm_df)
+
+    def _compute_profit_factor(self, analyzer: Analyzer) -> float:
+        pf = analyzer.pf
+        stats = pf.stats()
+        return stats.get("Profit Factor", np.nan)
+
+    def run(self) -> pd.DataFrame:
         
-    def _permutation_stats(self):
-        pass
+        self.original_metric = self._compute_profit_factor(self.analyzer)
+        self.synthetic_paths.clear()
+        self._get_synthetic_price_paths()
+        perm_better_count = 1
+        self.synthetic_metrics.clear()
 
-    def run(self):
-        """
-        returns a p-value, the higher the p-value the more your strategy sucks :)
+        for perm_path in tqdm(self.synthetic_paths, desc="Backtesting Permutations"):
+            perm_full = self.full_data.copy()
+            perm_full[['open', 'high', 'low', 'close']] = perm_path[['open', 'high', 'low', 'close']]
 
-        """
-        pass
+            analyzer_perm = Analyzer(
+                strategy=self.strategy,
+                params=self.params,
+                full_data=perm_full.reset_index().rename(columns={'index': 'timestamp'}),
+                timeframe=self.timeframe,
+                price_col=self.price_col,
+                init_cash=self.init_cash,
+                fees=self.fees,
+                slippage=self.slippage,
+                trade_side=self.trade_side,
+                sl_stop=self.sl_stop,
+                tp_stop=self.tp_stop,
+                size=self.size
+            )
 
-    def plot(self):
-        """
-        plots a histogram of all synthetic returns with the orginal performance
-        far righter orginal return marker -> your strategy trades some kind of edge not noise -> good
-        """
-        import matplotlib.pyplot as plt
-        plt.style.use("dark_theme")
+            perm_pf = self._compute_profit_factor(analyzer_perm)
+            if perm_pf >= self.original_metric:
+                perm_better_count += 1
+
+            self.synthetic_metrics.append(perm_pf)
+
+        
+        self.p_value = perm_better_count / self.n_sims
+        print(f"MCPT P-Value: {self.p_value:.4f}")
+
+        results = pd.DataFrame({
+            'ProfitFactor': self.synthetic_metrics
+        })
+        results.loc['Original', 'ProfitFactor'] = self.original_metric
+        results.loc['p-value', 'ProfitFactor'] = self.p_value
+
+        return results
+
+    def plot(self, df_results: Optional[pd.DataFrame] = None) -> None:
+        
+        if self.original_metric is None or self.p_value is None:
+            raise ValueError("use run() first")
+
+        if df_results is None:
+            df_results = self.run()
+
+        plt.style.use('dark_background')
+        plt.figure(figsize=(10, 6))
+
+        synth_vals = df_results.loc[df_results.index != 'Original', 'ProfitFactor'].dropna().astype(float)
+        orig_val = df_results.loc['Original', 'ProfitFactor']
+
+        plt.hist(synth_vals, bins=40, alpha=0.7, color='skyblue', edgecolor='black')
+        plt.axvline(orig_val, color='red', linestyle='--', linewidth=2, label=f'Original PF: {orig_val:.4f}')
+        plt.title(f'Permutation test: Profit Factor (p-Value = {self.p_value:.4f})')
+        plt.xlabel("Profit Factor")
+        plt.ylabel("Count")
+        plt.legend()
+        plt.grid(True, alpha=0.2)
+        plt.tight_layout()
         plt.show()
+
+####

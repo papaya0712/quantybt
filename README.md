@@ -14,7 +14,7 @@
   Simple `vectorbt`-based backtester. Outputs full performance metrics, equity curves, drawdown charts, and summary stats with minimal config.
 
 - **AdvancedOptimizer**  
-  The most comprehensive model in the project to date, a modified Walkforward Optimizer that supports both **rolling** and **anchored** validation schemes. It integrates **Bayesian Optimization** via [Hyperopt](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search 
+  The most comprehensive model in this project so far, a modified Walkforward Optimizer that supports both **rolling** and **anchored** validation schemes. It integrates **Bayesian Optimization** via [Hyperopt](https://github.com/hyperopt/hyperopt) for efficient hyperparameter search 
   Key enhancements include:    
     – A built-in **generalization loss penalty** to dynamically reduce overfitting  
     – Integrated **Monte Carlo bootstrapping** for each out-of-sample fold to assess robustness
@@ -23,15 +23,18 @@
   Monte Carlo simulation engine for risk estimation and statistical robustness.  
   Outputs full distribution metrics and p-values for Sharpe, Sortino, Calmar, Max Drawdown, and more.
 
+- **Permutation**  
+  Second Monte Carlo simulation engine for detecting data mining biases.
+
 - **LocalSensitivityAnalyzer**  
   Uses finite-difference-style perturbations to quickly screen for unstable or sensitive parameters.
 
 - **GlobalSensitivityAnalyzer**  
-  Performs full grid search across 2D parameter space for global insight into strategy behavior. 
+  Performs full grid search across 2D parameter space for global insight into strategy behavior. Morris screening may incoming. 
 
 - **Loader**  
   Integrated crypto data loader using [CCXT](https://github.com/ccxt/ccxt).  
-  Fetches and saves Binance historical data, no API key required.
+  Fetches and saves Binance historical data, no API key required. Fetched data has no gaps, 0 or NaN values when not fetching random low cap coins.
 
 ---
 
@@ -42,7 +45,7 @@
 
 - **EqualWeightPortfolio**  
    Naive 1/n allocation model for aggregated strategy returns, ideal for small portfolios < 5 strategies. 
-   Computes **CVaR** on global, rolling and empirical (via Bootstrapping) basis 
+   Computes **CVaR** on global, rolling and empirical (via Bootstrapping) basis
 
 - **Hierarchical Risk Parity (Planned)**   
    allocation algorithm that clusters strategies based on statistical distance and recursively allocates risk to reduce overexposure to correlated groups
