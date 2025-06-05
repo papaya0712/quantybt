@@ -207,8 +207,14 @@ class Analyzer:
 
     def export_trades(self, file_name: Optional[str] = 'strategy_report', save_dir: str = r"path"):
         trades = self.pf.trades.records_readable.copy()
-        os.makedirs(save_dir, exist_ok=True)
+        portfolio_equity = self.pf.value().sort_index()
 
+        trades['capital_used_at_entry'] = trades['Size'] * trades['Avg Entry Price']
+        portfolio_equity_df = portfolio_equity.to_frame(name='portfolio_value_at_entry').reset_index().rename(columns={'index': 'timestamp'})
+        trades = pd.merge_asof(trades, portfolio_equity_df, left_on='Entry Timestamp', right_on='timestamp', direction='backward')
+        trades['return_pct_of_portfolio'] = trades['PnL'] / trades['portfolio_value_at_entry']
+        
+        os.makedirs(save_dir, exist_ok=True)
         if not file_name.endswith('.feather'):
             file_name += '.feather'
 

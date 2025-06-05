@@ -35,7 +35,9 @@ def neg_log_lik_gumbel(theta, u, v):
 PERIODS_PER_YEAR = {
     '1m': 525_600, '5m': 105_120, '15m': 35_040, '30m': 17_520,
     '1h':   8_760, '2h':   4_380, '4h':    2_190,
-    '1d':     365, '1w':      52
+    '1d':     365, '1w':      52, 
+    'trades': 1
+    
     }
 
 def _periods(freq: str) -> int:

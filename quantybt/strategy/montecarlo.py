@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from .plots import _PlotBootstrapping
 
 try:
@@ -158,7 +159,7 @@ class Bootstrapping:
         bench.index = pd.to_datetime(bench.index)
         return bench
 
-    def results(self):
+    def run(self):
         res = self.mc_with_replacement()
         df = pd.DataFrame(res['simulated_stats'])
         df.loc['Original'] = res['original_stats']
@@ -191,3 +192,39 @@ class Bootstrapping:
             mc_data = self.mc_with_replacement()
             mc_results = pd.DataFrame(mc_data['simulated_stats'])
         return _PlotBootstrapping(self).plot_histograms(mc_results)
+
+class Permutation:
+    """
+    permutates the orginal logreturn series of your asset and generates n - synthetic price paths for testing.
+    can help to avoid/detect data mining bias
+
+    Note:
+     - much more compuational costs than simple bootstrapping, start with a few hundred simulations first
+     - Autocorrelation, Volatility Cluster, etc will be destroyed
+     - only permutates prices, therefore cannot be used for strategys which are using volume etc
+    """
+    def __init__(self, analyzer = None, n_sims: int = 100):
+        pass
+
+    def _get_synthetic_data(self):
+
+        pass
+        
+    def _permutation_stats(self):
+        pass
+
+    def run(self):
+        """
+        returns a p-value, the higher the p-value the more your strategy sucks :)
+        
+        """
+        pass
+
+    def plot(self):
+        """
+        plots a histogram of all synthetic returns with the orginal performance
+        far righter orginal return marker -> your strategy trades some kind of edge not noise -> good
+        """
+        import matplotlib.pyplot as plt
+        plt.style.use("dark_theme")
+        plt.show()
