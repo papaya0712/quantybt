@@ -24,7 +24,7 @@
   Outputs full distribution metrics and p-values for Sharpe, Sortino, Calmar, Max Drawdown, and more.
 
 - **Permutation**  
-  Second Monte Carlo simulation engine for detecting data mining biases.
+  Second Monte Carlo simulation engine for detecting data mining bias
 
 - **LocalSensitivityAnalyzer**  
   Uses finite-difference-style perturbations to quickly screen for unstable or sensitive parameters.
@@ -184,7 +184,6 @@ Avg Losing Trade Duration         1 days 08:28:53.497536945
 
 ## Montecarlo Simulation - Bootstrapping
 
-### Quick Guide:
 - **`analyzer`**: The already defined analyzer instance, as shown above. Alternatively, you can pass a return series `ret_series` and a timeframe `timeframe`.
 - **`n_sims`**: Total number of simulations. Aim for at least 5,000 simulations; 10,000 is recommended.
 - **`batch_size`**: Controls how many simulations run per batch to manage memory usage. With 32 GB of RAM, I typically use a batch size of 500–1,000.
@@ -192,7 +191,7 @@ Avg Losing Trade Duration         1 days 08:28:53.497536945
 Note: standard bootstrapping methods destroy the autocorrelation structure of ur return series
 
 ```python
-from quantybt import Bootstrapping
+from quantybt.montecarlo import Bootstrapping
 
 mc = Bootstrapping(analyzer=analyzer, n_sims=10000, batch_size=500)
 
@@ -215,4 +214,28 @@ fig.show()
 
 ```
 ![Backtest Plot](img/mc_plt.png)
+
+
+## Montecarlo Simulation - Permutation
+
+
+- **`analyzer`**: The already defined analyzer instance, as shown above. Alternatively
+- **`n_sims`**: Total number of simulations. Due to much higher computational costs start with 100-200 simulations
+
+The smaller the p-value, the less likely it is that the strategy’s performance is due to chance. Formally, the null hypothesis states: "The strategy has no genuine edge, its performance could be replicated on a randomly permuted price series"
+
+```python
+from quantybt.montecarlo import Permutation
+
+perm_tester = Permutation(analyzer=analyzer, n_sims=200)
+
+perm_results = perm_tester.run()
+perm_tester.plot(perm_results)
+```
+```text
+Running MCPT Permutation Test
+Generating permutations: 100%|██████████| 200/200 [00:31<00:00,  6.36it/s]
+Backtesting Permutations: 100%|██████████| 200/200 [07:43<00:00,  2.32s/it]MCPT P-Value: 0.0050  
+```
+![Backtest Plot](img/permutation_mc_plot.png)
 
